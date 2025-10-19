@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extractor de Metadatos EXIF Optimizado</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+            --border: #dee2e6;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .logo {
+            height: 50px;
+            width: auto;
+        }
+        
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 25px;
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--primary);
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            background-color: var(--light);
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            background-color: #e8f4fc;
+        }
+        
+        .upload-area.dragover {
+            background-color: #d4edff;
+            border-color: var(--primary-dark);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn:disabled {
+            background-color: var(--gray);
+            cursor: not-allowed;
+        }
+        
+        .btn-export {
+            background-color: var(--success);
+        }
+        
+        .btn-export:hover {
+            background-color: #219653;
+        }
+        
+        .btn-filter {
+            background-color: var(--warning);
+        }
+        
+        .btn-filter:hover {
+            background-color: #e67e22;
+        }
+        
+        .progress-container {
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .status {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+            color: var(--gray);
+        }
+        
+        .error {
+            color: var(--danger);
+            text-align: center;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #fde8e8;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .warning {
+            color: var(--warning);
+            text-align: center;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #fef5e7;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .results {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .results h2 {
+            color: var(--primary-dark);
+            font-size: 1.3rem;
+        }
+        
+        .results-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .search-box {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-size: 14px;
+            width: 200px;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .filter-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .filter-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .summary {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f8fafc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th {
+            background-color: #f2f6fc;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:hover {
+            background-color: #f8fafc;
+        }
+        
+        .coords-available {
+            color: var(--success);
+            font-weight: 500;
+        }
+        
+        .coords-missing {
+            color: var(--gray);
+            font-style: italic;
+        }
+        
+        .filename-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .filename-original {
+            font-size: 0.8rem;
+            color: var(--gray);
+            font-style: italic;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            color: var(--gray);
+            font-style: italic;
+        }
+        
+        .file-list {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8fafc;
+            border-radius: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        
+        .file-remove {
+            color: var(--danger);
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 15px;
+            color: var(--gray);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                padding: 15px;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+                font-size: 0.9rem;
+            }
+            
+            .results-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+            
+            .results-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .search-box {
+                width: 150px;
+            }
+            
+            header {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="https://images.squarespace-cdn.com/content/v1/6581c2f2ed9bfb1cf6328bee/3bb68561-9357-44ea-9c84-34b509a49059/logos_eventelecom_color.png" alt="Logo" class="logo">
+            <div class="header-content">
+                <h1>Extractor de Metadatos EXIF Optimizado</h1>
+                <p class="subtitle">Extrae fecha y coordenadas de imágenes en archivos ZIP (múltiples archivos)</p>
+            </div>
+        </header>
+        
+        <div class="content">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <h3>Arrastra tus archivos ZIP aquí</h3>
+                <p>o</p>
+                <button class="btn" id="selectFileBtn">Seleccionar archivos ZIP</button>
+                <input type="file" id="fileInput" class="file-input" accept=".zip" multiple>
+                <p class="subtitle" style="margin-top: 10px; font-size: 0.8rem;">Soporta archivos JPG y PNG con metadatos EXIF</p>
+            </div>
+            
+            <div class="file-list" id="fileList" style="display: none;">
+                <h4>Archivos seleccionados:</h4>
+                <div id="fileListItems"></div>
+            </div>
+            
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress" id="progressBar"></div>
+                </div>
+                <div class="status" id="statusText">Cargando archivos ZIP...</div>
+            </div>
+            
+            <div class="error" id="errorMessage"></div>
+            <div class="warning" id="warningMessage"></div>
+            
+            <div class="results" id="resultsSection">
+                <div class="results-header">
+                    <h2>Resultados</h2>
+                    <div class="results-controls">
+                        <input type="text" class="search-box" id="searchBox" placeholder="Buscar elemento...">
+                        <div class="filter-buttons">
+                            <button class="filter-btn active" data-filter="all">Todos</button>
+                            <button class="filter-btn" data-filter="with-coords">Con Coordenadas</button>
+                            <button class="filter-btn" data-filter="no-coords">Sin Coordenadas</button>
+                        </div>
+                        <button class="btn btn-export" id="exportBtn">
+                            <span>📥</span> Exportar CSV
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="summary" id="summaryText">
+                    <!-- El resumen se insertará aquí -->
+                </div>
+                
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>Elemento</th>
+                            <th>Fecha</th>
+                            <th>Coordenadas</th>
+                            <th>OT</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody">
+                        <!-- Los resultados se insertarán aquí -->
+                    </tbody>
+                </table>
+                <div class="no-results" id="noResults" style="display: none;">
+                    No se encontraron resultados que coincidan con los filtros aplicados.
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Extractor de Metadatos EXIF - Coordenadas en formato decimal</p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const selectFileBtn = document.getElementById('selectFileBtn');
+            const fileList = document.getElementById('fileList');
+            const fileListItems = document.getElementById('fileListItems');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const statusText = document.getElementById('statusText');
+            const errorMessage = document.getElementById('errorMessage');
+            const warningMessage = document.getElementById('warningMessage');
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsTableBody = document.getElementById('resultsTableBody');
+            const exportBtn = document.getElementById('exportBtn');
+            const searchBox = document.getElementById('searchBox');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const summaryText = document.getElementById('summaryText');
+            const noResults = document.getElementById('noResults');
+            
+            let metadataResults = [];
+            let selectedFiles = [];
+            let totalImagesToProcess = 0;
+            let processedImagesCount = 0;
+            let isProcessing = false;
+
+            selectFileBtn.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', function(e) {
+                if (this.files.length > 0) {
+                    addFilesToProcess(Array.from(this.files));
+                }
+            });
+            
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', function() {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                if (e.dataTransfer.files.length > 0) {
+                    const files = Array.from(e.dataTransfer.files).filter(file => 
+                        file.name.toLowerCase().endsWith('.zip')
+                    );
+                    
+                    if (files.length > 0) {
+                        addFilesToProcess(files);
+                    } else {
+                        showError('Por favor, selecciona archivos ZIP válidos.');
+                    }
+                }
+            });
+            
+            function addFilesToProcess(files) {
+                if (isProcessing) {
+                    showError('Espere a que termine el procesamiento actual antes de agregar más archivos.');
+                    return;
+                }
+                
+                const validFiles = files.filter(file => file.name.toLowerCase().endsWith('.zip'));
+                
+                if (validFiles.length === 0) {
+                    showError('Por favor, selecciona archivos ZIP válidos.');
+                    return;
+                }
+                
+                validFiles.forEach(file => {
+                    if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                        selectedFiles.push(file);
+                    }
+                });
+                
+                updateFileList();
+            }
+            
+            function updateFileList() {
+                if (selectedFiles.length === 0) {
+                    fileList.style.display = 'none';
+                    return;
+                }
+                
+                fileList.style.display = 'block';
+                fileListItems.innerHTML = '';
+                
+                selectedFiles.forEach((file, index) => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.innerHTML = `
+                        <span>${file.name} (${formatFileSize(file.size)})</span>
+                        <span class="file-remove" data-index="${index}">✕</span>
+                    `;
+                    fileListItems.appendChild(fileItem);
+                });
+                
+                const processButton = document.createElement('button');
+                processButton.className = 'btn';
+                processButton.textContent = 'Procesar todos los archivos';
+                processButton.style.marginTop = '10px';
+                processButton.addEventListener('click', processAllFiles);
+                fileListItems.appendChild(processButton);
+                
+                document.querySelectorAll('.file-remove').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = parseInt(this.getAttribute('data-index'));
+                        selectedFiles.splice(index, 1);
+                        updateFileList();
+                    });
+                });
+            }
+            
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            async function processAllFiles() {
+                if (selectedFiles.length === 0) {
+                    showError('No hay archivos para procesar.');
+                    return;
+                }
+                
+                if (isProcessing) {
+                    showError('Ya hay un proceso en ejecución.');
+                    return;
+                }
+                
+                isProcessing = true;
+                resetUI();
+                metadataResults = [];
+                totalImagesToProcess = 0;
+                processedImagesCount = 0;
+                
+                progressContainer.style.display = 'block';
+                statusText.textContent = 'Preparando procesamiento...';
+                
+                try {
+                    // Primero contar todas las imágenes
+                    for (const file of selectedFiles) {
+                        const arrayBuffer = await readFileAsArrayBuffer(file);
+                        const zip = await JSZip.loadAsync(arrayBuffer);
+                        
+                        zip.forEach((relativePath, zipEntry) => {
+                            if (isImageFile(zipEntry.name)) {
+                                totalImagesToProcess++;
+                            }
+                        });
+                    }
+                    
+                    if (totalImagesToProcess === 0) {
+                        showError('No se encontraron imágenes en los archivos ZIP.');
+                        isProcessing = false;
+                        return;
+                    }
+                    
+                    // Procesar cada archivo ZIP
+                    for (let i = 0; i < selectedFiles.length; i++) {
+                        const file = selectedFiles[i];
+                        await processZipFile(file, i);
+                    }
+                    
+                    finishProcessing();
+                    
+                } catch (error) {
+                    console.error('Error procesando archivos:', error);
+                    showError('Error al procesar los archivos: ' + error.message);
+                    isProcessing = false;
+                }
+            }
+            
+            async function processZipFile(file, fileIndex) {
+                statusText.textContent = `Procesando ${file.name}...`;
+                
+                try {
+                    const arrayBuffer = await readFileAsArrayBuffer(file);
+                    const zip = await JSZip.loadAsync(arrayBuffer);
+                    const imageFiles = [];
+                    
+                    zip.forEach((relativePath, zipEntry) => {
+                        if (isImageFile(zipEntry.name)) {
+                            imageFiles.push(zipEntry);
+                        }
+                    });
+                    
+                    if (imageFiles.length === 0) {
+                        showWarning(`No se encontraron imágenes en ${file.name}.`);
+                        return;
+                    }
+                    
+                    // Procesar imágenes en lotes
+                    await processImagesInBatches(imageFiles, file.name);
+                    
+                } catch (error) {
+                    console.error('Error procesando ZIP:', file.name, error);
+                    showError(`Error al procesar ${file.name}: ${error.message}`);
+                }
+            }
+            
+            function readFileAsArrayBuffer(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = e => resolve(e.target.result);
+                    reader.onerror = () => reject(new Error('Error al leer el archivo'));
+                    reader.readAsArrayBuffer(file);
+                });
+            }
+            
+            async function processImagesInBatches(imageFiles, zipName) {
+                // Tamaño de lote dinámico basado en el número de archivos
+                const BATCH_SIZE = Math.min(5, Math.max(1, Math.floor(imageFiles.length / 10) + 1));
+                
+                for (let i = 0; i < imageFiles.length; i += BATCH_SIZE) {
+                    const batch = imageFiles.slice(i, i + BATCH_SIZE);
+                    const batchPromises = batch.map(zipEntry => 
+                        processSingleImage(zipEntry, zipName)
+                    );
+                    
+                    await Promise.allSettled(batchPromises);
+                    
+                    // Pequeña pausa para permitir que la UI se actualice
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+            }
+            
+            async function processSingleImage(zipEntry, zipName) {
+                try {
+                    // Obtener el blob directamente sin comprimir para preservar metadatos
+                    const blob = await zipEntry.async('blob');
+                    
+                    const metadata = await extractImageMetadata(blob, zipEntry.name, zipName);
+                    
+                    metadataResults.push(metadata);
+                    addRowToTable(metadata);
+                    
+                    processedImagesCount++;
+                    const progress = (processedImagesCount / totalImagesToProcess) * 100;
+                    progressBar.style.width = progress + '%';
+                    
+                    const withCoordsCount = metadataResults.filter(r => r.coordenadas !== 'No disponible').length;
+                    statusText.textContent = `Procesando: ${processedImagesCount}/${totalImagesToProcess} (${withCoordsCount} con coordenadas)`;
+                    
+                    return metadata;
+                    
+                } catch (error) {
+                    console.error('Error procesando imagen:', zipEntry.name, error);
+                    
+                    const elemento = extraerContenidoMedio(zipEntry.name);
+                    const ot = extraerOT(zipEntry.name);
+                    
+                    const fallbackMetadata = {
+                        elemento: elemento,
+                        archivoOriginal: zipEntry.name,
+                        fecha: 'Error al procesar',
+                        coordenadas: 'No disponible',
+                        ot: ot,
+                        zipName: zipName
+                    };
+                    
+                    metadataResults.push(fallbackMetadata);
+                    addRowToTable(fallbackMetadata);
+                    
+                    processedImagesCount++;
+                    return fallbackMetadata;
+                }
+            }
+            
+            function extractImageMetadata(blob, filename, zipName) {
+                return new Promise((resolve, reject) => {
+                    // Usar FileReader para convertir blob a imagen
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = new Image();
+                        img.onload = function() {
+                            // Ahora extraer EXIF usando la imagen cargada
+                            EXIF.getData(img, function() {
+                                try {
+                                    const allMetaData = EXIF.getAllTags(this);
+                                    const datetime = allMetaData.DateTime || 
+                                                    allMetaData.DateTimeOriginal || 
+                                                    allMetaData.CreateDate || 
+                                                    'No disponible';
+                                    
+                                    const gpsLatitude = allMetaData.GPSLatitude;
+                                    const gpsLatitudeRef = allMetaData.GPSLatitudeRef;
+                                    const gpsLongitude = allMetaData.GPSLongitude;
+                                    const gpsLongitudeRef = allMetaData.GPSLongitudeRef;
+                                    
+                                    let coordenadas = 'No disponible';
+                                    
+                                    if (gpsLatitude && gpsLongitude) {
+                                        const latDecimal = convertToDecimal(gpsLatitude, gpsLatitudeRef);
+                                        const lonDecimal = convertToDecimal(gpsLongitude, gpsLongitudeRef);
+                                        coordenadas = `${latDecimal}, ${lonDecimal}`;
+                                    }
+                                    
+                                    const elemento = extraerContenidoMedio(filename);
+                                    const ot = extraerOT(filename);
+                                    
+                                    const metadata = {
+                                        elemento: elemento,
+                                        archivoOriginal: filename,
+                                        fecha: datetime,
+                                        coordenadas: coordenadas,
+                                        ot: ot,
+                                        zipName: zipName
+                                    };
+                                    
+                                    resolve(metadata);
+                                } catch (error) {
+                                    console.error('Error procesando metadatos:', error);
+                                    reject(error);
+                                }
+                            });
+                        };
+                        img.onerror = function() {
+                            reject(new Error('Error al cargar la imagen'));
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = function() {
+                        reject(new Error('Error al leer el archivo'));
+                    };
+                    reader.readAsDataURL(blob);
+                }).catch(error => {
+                    // Fallback: intentar extracción directa sin FileReader
+                    return new Promise((resolve) => {
+                        EXIF.getData(blob, function() {
+                            try {
+                                const allMetaData = EXIF.getAllTags(this);
+                                const datetime = allMetaData.DateTime || 
+                                                allMetaData.DateTimeOriginal || 
+                                                allMetaData.CreateDate || 
+                                                'No disponible';
+                                
+                                const gpsLatitude = allMetaData.GPSLatitude;
+                                const gpsLatitudeRef = allMetaData.GPSLatitudeRef;
+                                const gpsLongitude = allMetaData.GPSLongitude;
+                                const gpsLongitudeRef = allMetaData.GPSLongitudeRef;
+                                
+                                let coordenadas = 'No disponible';
+                                
+                                if (gpsLatitude && gpsLongitude) {
+                                    const latDecimal = convertToDecimal(gpsLatitude, gpsLatitudeRef);
+                                    const lonDecimal = convertToDecimal(gpsLongitude, gpsLongitudeRef);
+                                    coordenadas = `${latDecimal}, ${lonDecimal}`;
+                                }
+                                
+                                const elemento = extraerContenidoMedio(filename);
+                                const ot = extraerOT(filename);
+                                
+                                const metadata = {
+                                    elemento: elemento,
+                                    archivoOriginal: filename,
+                                    fecha: datetime,
+                                    coordenadas: coordenadas,
+                                    ot: ot,
+                                    zipName: zipName
+                                };
+                                
+                                resolve(metadata);
+                            } catch (error) {
+                                console.error('Error procesando metadatos (fallback):', error);
+                                
+                                const elemento = extraerContenidoMedio(filename);
+                                const ot = extraerOT(filename);
+                                
+                                resolve({
+                                    elemento: elemento,
+                                    archivoOriginal: filename,
+                                    fecha: 'No disponible',
+                                    coordenadas: 'No disponible',
+                                    ot: ot,
+                                    zipName: zipName
+                                });
+                            }
+                        });
+                    });
+                });
+            }
+            
+            function convertToDecimal(coord, ref) {
+                if (!coord || !ref) return 'No disponible';
+                
+                // Asegurarse de que las coordenadas sean números
+                const degrees = Array.isArray(coord) ? coord[0] : coord;
+                const minutes = Array.isArray(coord) ? coord[1] : 0;
+                const seconds = Array.isArray(coord) ? (coord[2] || 0) : 0;
+                
+                // Convertir a números si son strings
+                const degNum = typeof degrees === 'string' ? parseFloat(degrees) : degrees;
+                const minNum = typeof minutes === 'string' ? parseFloat(minutes) : minutes;
+                const secNum = typeof seconds === 'string' ? parseFloat(seconds) : seconds;
+                
+                let decimal = degNum + (minNum / 60) + (secNum / 3600);
+                
+                if (ref === 'S' || ref === 'W') {
+                    decimal = -decimal;
+                }
+                
+                return decimal.toFixed(6);
+            }
+            
+            function extraerContenidoMedio(nombreArchivo) {
+                // Extraer la parte después de la fecha (primeros 8 dígitos + guión bajo)
+                const regex = /^\d{8}_(.+)\.(jpg|jpeg|png)$/i;
+                const resultado = nombreArchivo.match(regex);
+                
+                if (resultado && resultado[1]) {
+                    return resultado[1];
+                }
+                
+                return nombreArchivo.replace(/\.[^/.]+$/, "");
+            }
+            
+            function extraerOT(nombreArchivo) {
+                // Extraer los primeros 8 dígitos del nombre del archivo
+                const regex = /^(\d{8})/;
+                const resultado = nombreArchivo.match(regex);
+                
+                if (resultado && resultado[1]) {
+                    return resultado[1];
+                }
+                
+                return 'OT_No_Encontrada';
+            }
+            
+            function isImageFile(filename) {
+                const imageExtensions = ['.jpg', '.jpeg', '.png'];
+                const lowerCaseFilename = filename.toLowerCase();
+                return imageExtensions.some(ext => lowerCaseFilename.endsWith(ext));
+            }
+            
+            function addRowToTable(metadata) {
+                const row = document.createElement('tr');
+                
+                const coordsClass = metadata.coordenadas !== 'No disponible' ? 'coords-available' : 'coords-missing';
+                
+                row.innerHTML = `
+                    <td>
+                        <div class="filename-info">
+                            <span>${metadata.elemento}</span>
+                            <span class="filename-original">${metadata.archivoOriginal}</span>
+                        </div>
+                    </td>
+                    <td>${metadata.fecha}</td>
+                    <td class="${coordsClass}">${metadata.coordenadas}</td>
+                    <td>${metadata.ot}</td>
+                `;
+                
+                row.dataset.coords = metadata.coordenadas !== 'No disponible' ? 'with-coords' : 'no-coords';
+                row.dataset.element = metadata.elemento.toLowerCase();
+                row.dataset.zip = metadata.zipName;
+                row.dataset.ot = metadata.ot.toLowerCase();
+                
+                resultsTableBody.appendChild(row);
+            }
+            
+            // Filtros y búsqueda
+            searchBox.addEventListener('input', applyFilters);
+            
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    applyFilters();
+                });
+            });
+            
+            function applyFilters() {
+                const searchTerm = searchBox.value.toLowerCase();
+                const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+                
+                const rows = resultsTableBody.querySelectorAll('tr');
+                let visibleCount = 0;
+                
+                rows.forEach(row => {
+                    const elementName = row.dataset.element;
+                    const otName = row.dataset.ot;
+                    const hasCoords = row.dataset.coords === 'with-coords';
+                    
+                    const matchesSearch = elementName.includes(searchTerm) || otName.includes(searchTerm);
+                    const matchesFilter = 
+                        activeFilter === 'all' ||
+                        (activeFilter === 'with-coords' && hasCoords) ||
+                        (activeFilter === 'no-coords' && !hasCoords);
+                    
+                    const shouldShow = matchesSearch && matchesFilter;
+                    
+                    row.style.display = shouldShow ? '' : 'none';
+                    if (shouldShow) visibleCount++;
+                });
+                
+                if (visibleCount === 0) {
+                    noResults.style.display = 'block';
+                    resultsTable.style.display = 'none';
+                } else {
+                    noResults.style.display = 'none';
+                    resultsTable.style.display = 'table';
+                }
+                
+                updateSummary(visibleCount);
+            }
+            
+            function updateSummary(visibleCount) {
+                const totalCount = metadataResults.length;
+                const withCoordsCount = metadataResults.filter(r => r.coordenadas !== 'No disponible').length;
+                const zipCount = new Set(metadataResults.map(r => r.zipName)).size;
+                const otCount = new Set(metadataResults.map(r => r.ot)).size;
+                
+                summaryText.innerHTML = `
+                    Mostrando ${visibleCount} de ${totalCount} elementos de ${zipCount} archivos ZIP. 
+                    ${withCoordsCount} imágenes contienen coordenadas GPS. 
+                    ${otCount} OTs diferentes encontradas.
+                `;
+            }
+            
+            function finishProcessing() {
+                progressContainer.style.display = 'none';
+                resultsSection.style.display = 'block';
+                applyFilters();
+                isProcessing = false;
+                
+                // Mostrar advertencia si pocas imágenes tienen coordenadas
+                const withCoordsCount = metadataResults.filter(r => r.coordenadas !== 'No disponible').length;
+                if (withCoordsCount < metadataResults.length * 0.1 && withCoordsCount > 0) {
+                    showWarning(`Solo ${withCoordsCount} de ${metadataResults.length} imágenes contienen coordenadas GPS.`);
+                }
+            }
+            
+            exportBtn.addEventListener('click', function() {
+                if (metadataResults.length === 0) return;
+                
+                // Determinar el nombre del archivo según la cantidad de OTs únicas
+                const uniqueOTs = [...new Set(metadataResults.map(r => r.ot))];
+                let csvFilename;
+                
+                if (uniqueOTs.length === 1) {
+                    // Una sola OT: usar el nombre de la OT
+                    csvFilename = `${uniqueOTs[0]}_exporte.csv`;
+                } else {
+                    // Múltiples OTs: usar nombre genérico
+                    csvFilename = `varios_ot.csv`;
+                }
+                
+                // Crear contenido CSV con la OT de cada elemento
+                let csvContent = "elemento,fecha,coordenadas,ot\n";
+                
+                metadataResults.forEach(result => {
+                    const row = [
+                        `"${result.elemento}"`,
+                        `"${result.fecha}"`,
+                        `"${result.coordenadas}"`,
+                        `"${result.ot}"`
+                    ].join(',');
+                    csvContent += row + "\n";
+                });
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", csvFilename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+            
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+                progressContainer.style.display = 'none';
+                isProcessing = false;
+            }
+            
+            function showWarning(message) {
+                warningMessage.textContent = message;
+                warningMessage.style.display = 'block';
+            }
+            
+            function resetUI() {
+                errorMessage.style.display = 'none';
+                warningMessage.style.display = 'none';
+                resultsSection.style.display = 'none';
+                progressBar.style.width = '0%';
+                resultsTableBody.innerHTML = '';
+                searchBox.value = '';
+                metadataResults = [];
+            }
+        });
+    </script>
+</body>
+</html>

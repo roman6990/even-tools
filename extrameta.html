@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extractor de Datos EXIF</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .logo {
+            max-width: 300px;
+            height: auto;
+            margin: 0 auto 20px;
+            display: block;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+        
+        .description {
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        
+        .upload-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .upload-options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-success {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        #cameraFileInput {
+            display: none;
+        }
+        
+        .preview-container {
+            margin: 20px auto;
+            max-width: 400px;
+            display: none;
+        }
+        
+        #imagePreview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+        
+        .results-section h2 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .coordinate {
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .maps-link {
+            display: inline-block;
+            margin-top: 5px;
+            padding: 5px 10px;
+            background-color: #4285f4;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: background-color 0.3s;
+        }
+        
+        .maps-link:hover {
+            background-color: #3367d6;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+            padding: 20px;
+        }
+        
+        .error-message {
+            background-color: #ffeaa7;
+            color: #d63031;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .info-message {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .instructions {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 14px;
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .upload-options {
+                flex-direction: column;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+                font-size: 14px;
+            }
+            
+            .logo {
+                max-width: 250px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            th, td {
+                display: block;
+                width: 100%;
+            }
+            
+            tr {
+                margin-bottom: 15px;
+                display: block;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                padding: 10px;
+            }
+            
+            th {
+                display: none;
+            }
+            
+            td::before {
+                content: attr(data-label);
+                font-weight: bold;
+                display: block;
+                margin-bottom: 5px;
+                color: #3498db;
+            }
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="https://images.squarespace-cdn.com/content/v1/6581c2f2ed9bfb1cf6328bee/3bb68561-9357-44ea-9c84-34b509a49059/logos_eventelecom_color.png" alt="Eventelecom Logo" class="logo">
+            <h1>Extractor de Datos EXIF de Fotos</h1>
+            <p class="description">Selecciona una foto o toma una nueva para extraer sus metadatos EXIF, incluyendo coordenadas GPS</p>
+        </header>
+        
+        <section class="upload-section">
+            <h2>Cargar Imagen</h2>
+            
+            <div class="instructions">
+                <h3>Instrucciones:</h3>
+                <ul>
+                    <li><strong>Seleccionar Archivo:</strong> Para elegir una foto desde el ordenador</li>
+                    <li><strong>Tomar Foto con App:</strong> Para abrir directamente la cámara de tu dispositivo</li>
+                </ul>
+                <p><em>Nota: Asegúrate de que la foto tenga habilitados los datos de ubicación/GPS en la cámara de tu dispositivo.</em></p>
+            </div>
+            
+            <div class="upload-options">
+                <button id="selectFileBtn" class="btn btn-primary">
+                    <i>📁</i> Seleccionar Archivo (PC)
+                </button>
+                <button id="useCameraAppBtn" class="btn btn-success">
+                    <i>📱</i> Tomar Foto desde el celular
+                </button>
+            </div>
+            
+            <input type="file" id="fileInput" accept="image/*">
+            <input type="file" id="cameraFileInput" accept="image/*" capture="environment">
+            
+            <div class="preview-container">
+                <img id="imagePreview" alt="Vista previa de la imagen">
+            </div>
+            
+            <div id="errorMessage" class="error-message"></div>
+        </section>
+        
+        <section class="results-section" id="resultsSection">
+            <h2>Datos EXIF Extraídos</h2>
+            <table id="exifTable">
+                <thead>
+                    <tr>
+                        <th>Archivo</th>
+                        <th>Fecha y Hora</th>
+                        <th>Coordenadas (Decimal)</th>
+                    </tr>
+                </thead>
+                <tbody id="exifTableBody">
+                    <!-- Los datos EXIF se insertarán aquí -->
+                </tbody>
+            </table>
+            <p id="noDataMessage" class="no-data">No se han encontrado datos EXIF en la imagen seleccionada.</p>
+        </section>
+        
+        <footer>
+            <p>Extracción de datos EXIF &copy; 2025</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos del DOM
+            const fileInput = document.getElementById('fileInput');
+            const cameraFileInput = document.getElementById('cameraFileInput');
+            const selectFileBtn = document.getElementById('selectFileBtn');
+            const useCameraAppBtn = document.getElementById('useCameraAppBtn');
+            const imagePreview = document.getElementById('imagePreview');
+            const previewContainer = document.querySelector('.preview-container');
+            const resultsSection = document.getElementById('resultsSection');
+            const exifTableBody = document.getElementById('exifTableBody');
+            const noDataMessage = document.getElementById('noDataMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Event Listeners
+            selectFileBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFileSelect);
+            useCameraAppBtn.addEventListener('click', () => cameraFileInput.click());
+            cameraFileInput.addEventListener('change', handleFileSelect);
+            
+            // Manejar selección de archivo
+            function handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    processImage(file);
+                }
+            }
+            
+            // Procesar imagen y extraer EXIF
+            function processImage(file) {
+                hideError();
+                
+                // Mostrar vista previa
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    previewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                
+                // Usar EXIF.js para leer los metadatos
+                EXIF.getData(file, function() {
+                    try {
+                        const exifData = EXIF.getAllTags(this);
+                        displayExifData(file.name, exifData);
+                    } catch (error) {
+                        showError('Error al leer los datos EXIF: ' + error.message);
+                    }
+                });
+            }
+            
+            // Mostrar datos EXIF en la tabla
+            function displayExifData(filename, exifData) {
+                // Limpiar tabla anterior
+                exifTableBody.innerHTML = '';
+                noDataMessage.style.display = 'none';
+                
+                // Extraer datos relevantes
+                const dateTime = exifData.DateTime || exifData.DateTimeOriginal || 
+                                exifData.CreateDate || exifData.ModifyDate || 'No disponible';
+                
+                let coordinates = 'No disponible';
+                let mapsLink = '';
+                
+                // Procesar coordenadas GPS si están disponibles
+                if (exifData.GPSLatitude && exifData.GPSLongitude && 
+                    exifData.GPSLatitudeRef && exifData.GPSLongitudeRef) {
+                    
+                    const lat = convertDMSToDD(
+                        exifData.GPSLatitude[0],
+                        exifData.GPSLatitude[1],
+                        exifData.GPSLatitude[2],
+                        exifData.GPSLatitudeRef
+                    );
+                    
+                    const lon = convertDMSToDD(
+                        exifData.GPSLongitude[0],
+                        exifData.GPSLongitude[1],
+                        exifData.GPSLongitude[2],
+                        exifData.GPSLongitudeRef
+                    );
+                    
+                    // Verificar si las coordenadas son válidas (no 0,0)
+                    if (lat === 0 && lon === 0) {
+                        coordinates = 'Coordenadas no válidas (0,0)';
+                    } else {
+                        coordinates = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                        // Crear enlace a Google Maps
+                        mapsLink = `<a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" class="maps-link">Ver en Google Maps</a>`;
+                    }
+                }
+                
+                // Crear fila de tabla
+                const row = document.createElement('tr');
+                
+                // Para diseño responsive en móviles
+                row.innerHTML = `
+                    <td data-label="Archivo">${filename}</td>
+                    <td data-label="Fecha y Hora">${formatDateTime(dateTime)}</td>
+                    <td data-label="Coordenadas" class="coordinate">
+                        ${coordinates}
+                        ${mapsLink}
+                    </td>
+                `;
+                
+                exifTableBody.appendChild(row);
+                resultsSection.style.display = 'block';
+                
+                // Si no hay datos EXIF significativos, mostrar mensaje
+                if (dateTime === 'No disponible' && coordinates === 'No disponible') {
+                    noDataMessage.style.display = 'block';
+                }
+            }
+            
+            // Formatear fecha y hora
+            function formatDateTime(dateTimeStr) {
+                if (dateTimeStr === 'No disponible') return dateTimeStr;
+                
+                // Diferentes formatos de fecha EXIF
+                let formattedDate = dateTimeStr;
+                
+                // Formato: YYYY:MM:DD HH:MM:SS
+                if (dateTimeStr.includes(':')) {
+                    const parts = dateTimeStr.split(' ');
+                    if (parts.length === 2) {
+                        const dateParts = parts[0].split(':');
+                        const timeParts = parts[1].split(':');
+                        
+                        if (dateParts.length === 3 && timeParts.length === 3) {
+                            formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]} ${timeParts[0]}:${timeParts[1]}:${timeParts[2]}`;
+                        }
+                    }
+                }
+                // Formato: YYYY-MM-DDTHH:MM:SS (ISO)
+                else if (dateTimeStr.includes('T')) {
+                    const date = new Date(dateTimeStr);
+                    if (!isNaN(date.getTime())) {
+                        formattedDate = date.toLocaleString();
+                    }
+                }
+                
+                return formattedDate;
+            }
+            
+            // Convertir coordenadas DMS a Decimal
+            function convertDMSToDD(degrees, minutes, seconds, direction) {
+                // Asegurarse de que los valores sean números
+                const deg = typeof degrees === 'number' ? degrees : parseFloat(degrees);
+                const min = typeof minutes === 'number' ? minutes : parseFloat(minutes);
+                const sec = typeof seconds === 'number' ? seconds : parseFloat(seconds);
+                
+                // Verificar que los valores sean válidos
+                if (isNaN(deg) || isNaN(min) || isNaN(sec)) {
+                    return 0;
+                }
+                
+                let dd = deg + min/60 + sec/3600;
+                
+                if (direction === 'S' || direction === 'W') {
+                    dd = dd * -1;
+                }
+                
+                return dd;
+            }
+            
+            // Mostrar mensaje de error
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+            }
+            
+            // Ocultar mensaje de error
+            function hideError() {
+                errorMessage.style.display = 'none';
+            }
+            
+            // Verificar compatibilidad con EXIF
+            function checkEXIFSupport() {
+                if (typeof EXIF === 'undefined') {
+                    showError('Error: No se pudo cargar la biblioteca EXIF. Por favor, recarga la página.');
+                    return false;
+                }
+                return true;
+            }
+            
+            // Inicializar verificando soporte EXIF
+            checkEXIFSupport();
+        });
+    </script>
+    
+    <!-- Incluir EXIF.js desde CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+</body>
+</html>
