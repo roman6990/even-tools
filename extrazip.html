@@ -1,0 +1,2039 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesador de Conversaciones WhatsApp</title>
+    <style>
+        :root {
+            --primary-color: #25D366;
+            --secondary-color: #128C7E;
+            --background-color: #f0f0f0;
+            --card-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #dddddd;
+            --error-color: #e74c3c;
+            --warning-color: #f39c12;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: var(--card-color);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+        
+        .upload-section {
+            background-color: var(--card-color);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .file-input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .file-input-button:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .file-name {
+            margin-top: 10px;
+            font-style: italic;
+            color: #666;
+        }
+        
+        .process-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .process-btn:hover {
+            background-color: #0e6e5e;
+        }
+        
+        .process-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .results-section {
+            display: none;
+            background-color: var(--card-color);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .title-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .title-editable {
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .title-editable:hover {
+            background-color: #f8f9fa;
+            border-color: var(--primary-color);
+        }
+        
+        .title-input {
+            font-size: 24px;
+            font-weight: bold;
+            border: 2px solid var(--primary-color);
+            border-radius: 5px;
+            padding: 8px 12px;
+            background: white;
+            color: var(--secondary-color);
+            min-width: 300px;
+            outline: none;
+        }
+        
+        .edit-title-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .edit-title-btn:hover {
+            background: var(--secondary-color);
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .export-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s;
+        }
+        
+        .export-btn:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .export-btn.pdf {
+            background-color: #e74c3c;
+        }
+        
+        .export-btn.pdf:hover {
+            background-color: #c0392b;
+        }
+        
+        .search-filter-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .filter-select {
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background: white;
+            font-size: 14px;
+            min-width: 180px;
+        }
+        
+        .clear-filters-btn {
+            background: #95a5a6;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .clear-filters-btn:hover {
+            background: #7f8c8d;
+        }
+        
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .image-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+        
+        .image-card:active {
+            cursor: grabbing;
+        }
+        
+        .image-card.dragging {
+            opacity: 0.8;
+            transform: scale(1.02);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+        
+        .image-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .drag-handle {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(37, 211, 102, 0.9);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            width: 40px;
+            height: 40px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+        
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        
+        .drag-handle:hover {
+            background: var(--secondary-color);
+            transform: scale(1.1);
+        }
+        
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+        
+        .delete-btn:hover {
+            background: #c0392b;
+            transform: scale(1.1);
+        }
+        
+        .image-container {
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .image-info {
+            padding: 15px;
+        }
+        
+        .image-name {
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+            font-size: 14px;
+            word-break: break-all;
+        }
+        
+        .comment-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 14px;
+            resize: none;
+            height: 40px;
+        }
+        
+        .comment-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.1);
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            grid-column: 1 / -1;
+        }
+        
+        .stats {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .tab-container {
+            margin-bottom: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            color: #666;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: var(--secondary-color);
+            border-bottom: 2px solid var(--secondary-color);
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: #e0e0e0;
+            border-radius: 3px;
+            margin: 10px 0;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .file-stats {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 12px;
+            color: #666;
+            display: none;
+        }
+        
+        .reorder-hint {
+            text-align: center;
+            padding: 15px;
+            color: #666;
+            font-size: 16px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px dashed var(--primary-color);
+        }
+        
+        .drop-zone {
+            min-height: 100px;
+            border: 3px dashed var(--primary-color);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(37, 211, 102, 0.05);
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .drop-zone.active {
+            background: rgba(37, 211, 102, 0.1);
+            border-color: var(--secondary-color);
+        }
+        
+        .error-message {
+            background-color: rgba(231, 76, 60, 0.1);
+            border: 1px solid var(--error-color);
+            color: var(--error-color);
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .batch-info {
+            background-color: rgba(52, 152, 219, 0.1);
+            border: 1px solid #3498db;
+            color: #2980b9;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .results-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .title-section {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .title-input {
+                min-width: 200px;
+                font-size: 20px;
+            }
+            
+            .export-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .images-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                text-align: left;
+                border-bottom: 1px solid var(--border-color);
+            }
+            
+            .drag-handle, .delete-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
+            }
+            
+            .search-filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-input, .filter-select {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Procesador de Conversaciones de WhatsApp</h1>
+            <p>Carga un archivo de texto o ZIP con conversaciones de WhatsApp y extrae información sobre imágenes y comentarios</p>
+        </header>
+        
+        <section class="upload-section">
+            <div class="tab-container">
+                <div class="tabs">
+                    <button class="tab active" data-tab="text-tab">Archivo de Texto</button>
+                    <button class="tab" data-tab="zip-tab">Archivo ZIP</button>
+                </div>
+                
+                <div id="text-tab" class="tab-content active">
+                    <div class="file-input-container">
+                        <div class="file-input-wrapper">
+                            <input type="file" id="textFileInput" accept=".txt">
+                            <div class="file-input-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                Seleccionar archivo de texto
+                            </div>
+                        </div>
+                        <div id="textFileName" class="file-name">No se ha seleccionado ningún archivo</div>
+                    </div>
+                </div>
+                
+                <div id="zip-tab" class="tab-content">
+                    <div class="file-input-container">
+                        <div class="file-input-wrapper">
+                            <input type="file" id="zipFileInput" accept=".zip">
+                            <div class="file-input-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                Seleccionar archivo ZIP
+                            </div>
+                        </div>
+                        <div id="zipFileName" class="file-name">No se ha seleccionado ningún archivo</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="progress-bar" id="progressBar">
+                <div class="progress" id="progress"></div>
+            </div>
+            <div id="fileStats" class="file-stats"></div>
+            <div id="batchInfo" class="batch-info" style="display:none;"></div>
+            <div id="debugInfo" class="debug-info"></div>
+            
+            <button id="processBtn" class="process-btn" disabled>Procesar archivo</button>
+        </section>
+        
+        <div class="loading" id="loadingIndicator">
+            <div class="spinner"></div>
+            <p>Procesando archivo, por favor espere...</p>
+        </div>
+        
+        <section class="results-section" id="resultsSection">
+            <div class="results-header">
+                <div class="title-section">
+                    <h2 id="reportTitle" class="title-editable">Resultados del procesamiento</h2>
+                    <button id="editTitleBtn" class="edit-title-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        Editar Título
+                    </button>
+                </div>
+                <div class="export-buttons">
+                    <button id="exportCsvBtn" class="export-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Exportar a CSV
+                    </button>
+                    <button id="exportPdfBtn" class="export-btn pdf">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        Exportar a PDF
+                    </button>
+                </div>
+            </div>
+            
+            <div class="search-filter-bar" id="searchFilterBar" style="display:none;">
+                <input type="text" id="searchInput" placeholder="Buscar en comentarios..." class="search-input">
+                <select id="fileFilter" class="filter-select">
+                    <option value="all">Todos los archivos</option>
+                </select>
+                <button id="clearFilters" class="clear-filters-btn">Limpiar filtros</button>
+            </div>
+            
+            <div class="stats" id="statsInfo"></div>
+            
+            <div class="reorder-hint" id="reorderHint">
+                🎯 <strong>Para reordenar:</strong> Arrastra cualquier parte de la tarjeta hacia la nueva posición
+            </div>
+            
+            <div id="imagesContainer" class="images-grid">
+                <!-- Las imágenes se insertarán aquí -->
+            </div>
+        </section>
+        
+        <footer>
+            <p>Procesador de conversaciones de WhatsApp &copy; 2023</p>
+        </footer>
+    </div>
+
+    <!-- Incluir las librerías -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos del DOM
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const textFileInput = document.getElementById('textFileInput');
+            const zipFileInput = document.getElementById('zipFileInput');
+            const textFileName = document.getElementById('textFileName');
+            const zipFileName = document.getElementById('zipFileName');
+            const processBtn = document.getElementById('processBtn');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const resultsSection = document.getElementById('resultsSection');
+            const imagesContainer = document.getElementById('imagesContainer');
+            const exportCsvBtn = document.getElementById('exportCsvBtn');
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
+            const statsInfo = document.getElementById('statsInfo');
+            const reportTitle = document.getElementById('reportTitle');
+            const editTitleBtn = document.getElementById('editTitleBtn');
+            const progressBar = document.getElementById('progressBar');
+            const progress = document.getElementById('progress');
+            const fileStats = document.getElementById('fileStats');
+            const debugInfo = document.getElementById('debugInfo');
+            const reorderHint = document.getElementById('reorderHint');
+            const searchFilterBar = document.getElementById('searchFilterBar');
+            const searchInput = document.getElementById('searchInput');
+            const fileFilter = document.getElementById('fileFilter');
+            const clearFilters = document.getElementById('clearFilters');
+            const batchInfo = document.getElementById('batchInfo');
+            
+            let processedData = [];
+            let imageFiles = new Map();
+            let currentFileType = 'text';
+            let draggedItem = null;
+            let dragStartIndex = null;
+            let isEditingTitle = false;
+            let currentTitle = 'Resultados del procesamiento';
+            let filteredData = [];
+
+            // Patrones mejorados para detección
+            const enhancedPatterns = {
+                dateFormats: [
+                    /\[\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2}:\d{2}\]/, // [DD/MM/AAAA, HH:MM:SS]
+                    /\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2} -/,         // DD/MM/AAAA, HH:MM -
+                    /\d{1,2}\.\d{1,2}\.\d{4}, \d{1,2}:\d{2}/,          // DD.MM.AAAA, HH:MM
+                    /\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2} [a|p]\. m\./, // Formato español completo
+                    /\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2}\s?[ap]m/,     // Formato inglés
+                    /\d{1,2}\/\d{1,2}\/\d{2}, \d{1,2}:\d{2}\s?[ap]m/,     // Formato año corto
+                ],
+                mediaPatterns: [
+                    /<adjunto:\s*(.*?)>/i,                              // <adjunto: nombre>
+                    /(IMG-\d{8}-WA\d{4}\.(jpg|jpeg|png|gif|bmp|webp))/i,
+                    /(VID-\d{8}-WA\d{4}\.(mp4|mov|avi))/i,
+                    /(AUD-\d{8}-WA\d{4}\.(mp3|m4a|opus))/i,
+                    /(PTT-\d{8}-WA\d{4}\.(opus|ogg))/i,
+                    /(STK-\d{8}-WA\d{4}\.(webp|png))/i,
+                ]
+            };
+
+            // Manejo de pestañas
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+                    
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    currentFileType = tabId === 'text-tab' ? 'text' : 'zip';
+                    updateProcessButtonState();
+                });
+            });
+            
+            // Manejar la selección de archivo de texto
+            textFileInput.addEventListener('change', function() {
+                if (this.files && this.files.length > 0) {
+                    try {
+                        validateFile(this.files[0], 'text');
+                        textFileName.textContent = this.files[0].name;
+                        textFileName.style.color = '#666';
+                    } catch (error) {
+                        textFileName.textContent = error.message;
+                        textFileName.style.color = 'var(--error-color)';
+                        this.value = '';
+                    }
+                } else {
+                    textFileName.textContent = 'No se ha seleccionado ningún archivo';
+                    textFileName.style.color = '#666';
+                }
+                updateProcessButtonState();
+            });
+            
+            // Manejar la selección de archivo ZIP
+            zipFileInput.addEventListener('change', function() {
+                if (this.files && this.files.length > 0) {
+                    try {
+                        validateFile(this.files[0], 'zip');
+                        zipFileName.textContent = this.files[0].name;
+                        zipFileName.style.color = '#666';
+                    } catch (error) {
+                        zipFileName.textContent = error.message;
+                        zipFileName.style.color = 'var(--error-color)';
+                        this.value = '';
+                    }
+                } else {
+                    zipFileName.textContent = 'No se ha seleccionado ningún archivo';
+                    zipFileName.style.color = '#666';
+                }
+                updateProcessButtonState();
+            });
+            
+            // Validación de archivos
+            function validateFile(file, type) {
+                const maxSize = type === 'zip' ? 100 * 1024 * 1024 : 10 * 1024 * 1024; // 100MB para ZIP, 10MB para texto
+                const allowedTypes = {
+                    text: ['text/plain', 'application/octet-stream'],
+                    zip: ['application/zip', 'application/x-zip-compressed']
+                };
+
+                if (file.size > maxSize) {
+                    throw new Error(`El archivo es demasiado grande. Tamaño máximo: ${maxSize / 1024 / 1024}MB`);
+                }
+
+                if (!allowedTypes[type].includes(file.type) && !file.name.match(type === 'text' ? /\.txt$/i : /\.zip$/i)) {
+                    throw new Error(`Tipo de archivo no válido. Se esperaba un archivo ${type.toUpperCase()}`);
+                }
+
+                return true;
+            }
+            
+            // Actualizar estado del botón de procesar
+            function updateProcessButtonState() {
+                let hasFile = false;
+                
+                if (currentFileType === 'text') {
+                    hasFile = textFileInput.files && textFileInput.files.length > 0;
+                } else {
+                    hasFile = zipFileInput.files && zipFileInput.files.length > 0;
+                }
+                
+                processBtn.disabled = !hasFile;
+            }
+            
+            // Editar título
+            editTitleBtn.addEventListener('click', function() {
+                if (!isEditingTitle) {
+                    startEditingTitle();
+                } else {
+                    finishEditingTitle();
+                }
+            });
+            
+            // Hacer clic en el título para editar
+            reportTitle.addEventListener('click', function() {
+                if (!isEditingTitle) {
+                    startEditingTitle();
+                }
+            });
+            
+            function startEditingTitle() {
+                isEditingTitle = true;
+                const currentTitleText = reportTitle.textContent;
+                
+                // Crear input de edición
+                const titleInput = document.createElement('input');
+                titleInput.type = 'text';
+                titleInput.className = 'title-input';
+                titleInput.value = currentTitleText;
+                
+                // Reemplazar el título con el input
+                reportTitle.replaceWith(titleInput);
+                titleInput.focus();
+                titleInput.select();
+                
+                // Cambiar texto del botón
+                editTitleBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Guardar
+                `;
+                
+                // Manejar la tecla Enter
+                titleInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        finishEditingTitle();
+                    }
+                });
+                
+                // Manejar la pérdida de foco
+                titleInput.addEventListener('blur', function() {
+                    finishEditingTitle();
+                });
+            }
+            
+            function finishEditingTitle() {
+                if (!isEditingTitle) return;
+                
+                const titleInput = document.querySelector('.title-input');
+                if (titleInput) {
+                    const newTitle = titleInput.value.trim() || 'Resultados del procesamiento';
+                    currentTitle = newTitle;
+                    
+                    // Restaurar el título
+                    reportTitle.textContent = newTitle;
+                    titleInput.replaceWith(reportTitle);
+                    
+                    // Restaurar el botón
+                    editTitleBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        Editar Título
+                    `;
+                    
+                    isEditingTitle = false;
+                }
+            }
+            
+            // Procesar el archivo
+            processBtn.addEventListener('click', async function() {
+                let file;
+                
+                if (currentFileType === 'text') {
+                    if (!textFileInput.files || textFileInput.files.length === 0) {
+                        alert('Por favor, selecciona un archivo de texto primero.');
+                        return;
+                    }
+                    file = textFileInput.files[0];
+                } else {
+                    if (!zipFileInput.files || zipFileInput.files.length === 0) {
+                        alert('Por favor, selecciona un archivo ZIP primero.');
+                        return;
+                    }
+                    file = zipFileInput.files[0];
+                }
+                
+                loadingIndicator.style.display = 'block';
+                progressBar.style.display = 'block';
+                resultsSection.style.display = 'none';
+                imagesContainer.innerHTML = '';
+                imageFiles.clear();
+                processedData = [];
+                debugInfo.style.display = 'none';
+                batchInfo.style.display = 'none';
+                searchFilterBar.style.display = 'none';
+                
+                try {
+                    if (currentFileType === 'text') {
+                        processedData = await processTextFile(file);
+                    } else {
+                        const result = await processZipFile(file);
+                        processedData = result.data;
+                        imageFiles = result.images;
+                    }
+                    
+                    displayResults(processedData);
+                    
+                    loadingIndicator.style.display = 'none';
+                    progressBar.style.display = 'none';
+                    resultsSection.style.display = 'block';
+                    
+                    // Mejorar accesibilidad
+                    enhanceAccessibility();
+                } catch (error) {
+                    loadingIndicator.style.display = 'none';
+                    progressBar.style.display = 'none';
+                    showError('Error al procesar el archivo: ' + error.message);
+                    console.error(error);
+                }
+            });
+            
+            // Exportar a CSV
+            exportCsvBtn.addEventListener('click', function() {
+                if (processedData.length === 0) {
+                    alert('No hay datos para exportar.');
+                    return;
+                }
+                
+                exportToCSV(processedData);
+            });
+            
+            // Exportar a PDF
+            exportPdfBtn.addEventListener('click', async function() {
+                if (processedData.length === 0) {
+                    alert('No hay datos para exportar.');
+                    return;
+                }
+                
+                loadingIndicator.style.display = 'block';
+                try {
+                    await exportToPDF(processedData);
+                    loadingIndicator.style.display = 'none';
+                } catch (error) {
+                    loadingIndicator.style.display = 'none';
+                    alert('Error al generar PDF: ' + error.message);
+                }
+            });
+            
+            // Procesar archivo de texto
+            function processTextFile(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        try {
+                            updateProgress('processing', 50, 'Procesando contenido del archivo...');
+                            
+                            const fileContent = e.target.result;
+                            const results = processWhatsAppFile(fileContent, file.name);
+                            
+                            updateProgress('processing', 100, `Procesado: ${file.name} - ${results.length} imágenes encontradas`);
+                            
+                            resolve(results);
+                        } catch (error) {
+                            const errorInfo = handleProcessingError(error, 'processTextFile');
+                            reject(new Error(errorInfo.error));
+                        }
+                    };
+                    
+                    reader.onerror = function() {
+                        reject(new Error('Error al leer el archivo.'));
+                    };
+                    
+                    reader.readAsText(file, 'UTF-8');
+                });
+            }
+            
+            // Procesar archivo ZIP
+            async function processZipFile(zipFile) {
+                try {
+                    updateProgress('loading', 10, 'Cargando archivo ZIP...');
+                    
+                    const zip = await JSZip.loadAsync(zipFile);
+                    const allResults = [];
+                    const imageMap = new Map();
+                    
+                    // Obtener todos los archivos
+                    const fileEntries = [];
+                    zip.forEach((relativePath, zipEntry) => {
+                        if (!zipEntry.dir) {
+                            fileEntries.push({ path: relativePath, entry: zipEntry });
+                        }
+                    });
+                    
+                    updateProgress('loading', 20, `Encontrados ${fileEntries.length} archivos en el ZIP`);
+                    
+                    // Primero, extraer todas las imágenes
+                    const imagePromises = [];
+                    let imageCount = 0;
+                    
+                    for (const fileEntry of fileEntries) {
+                        const fileName = fileEntry.path.split('/').pop();
+                        if (fileName.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i)) {
+                            imageCount++;
+                            imagePromises.push(
+                                fileEntry.entry.async('blob').then(blob => {
+                                    const imageUrl = URL.createObjectURL(blob);
+                                    imageMap.set(fileName, {
+                                        url: imageUrl,
+                                        blob: blob,
+                                        originalName: fileName
+                                    });
+                                    // También mapear nombres sin extensión para mejor matching
+                                    const nameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
+                                    imageMap.set(nameWithoutExt, {
+                                        url: imageUrl,
+                                        blob: blob,
+                                        originalName: fileName
+                                    });
+                                })
+                            );
+                        }
+                    }
+                    
+                    updateProgress('extracting', 30, `Extrayendo ${imageCount} imágenes...`);
+                    
+                    // Esperar a que se carguen todas las imágenes
+                    if (imagePromises.length > 0) {
+                        await Promise.all(imagePromises);
+                    }
+                    
+                    updateProgress('extracting', 40, `${imageCount} imágenes extraídas, buscando archivos de texto...`);
+                    
+                    // Procesar archivos de texto en lotes para mejor rendimiento
+                    const textFileEntries = fileEntries.filter(fileEntry => {
+                        const fileName = fileEntry.path.split('/').pop();
+                        const lowerName = fileName.toLowerCase();
+                        
+                        return lowerName.endsWith('.txt') || 
+                               lowerName.endsWith('.text') ||
+                               !fileName.includes('.') ||
+                               lowerName.includes('chat') ||
+                               lowerName.includes('whatsapp') ||
+                               lowerName.includes('conversation');
+                    });
+                    
+                    if (textFileEntries.length === 0) {
+                        throw new Error('No se encontraron archivos de texto procesables en el ZIP.');
+                    }
+                    
+                    // Procesar en lotes para archivos grandes
+                    const batchSize = 5;
+                    const batches = [];
+                    for (let i = 0; i < textFileEntries.length; i += batchSize) {
+                        batches.push(textFileEntries.slice(i, i + batchSize));
+                    }
+                    
+                    batchInfo.style.display = 'block';
+                    
+                    for (let i = 0; i < batches.length; i++) {
+                        const batch = batches[i];
+                        const batchProgress = ((i / batches.length) * 40) + 40; // De 40% a 80%
+                        
+                        updateProgress('processing', batchProgress, 
+                            `Procesando lote ${i + 1}/${batches.length} (${batch.length} archivos)...`);
+                        
+                        batchInfo.textContent = `Procesando lote ${i + 1} de ${batches.length}: ${batch.map(f => f.path.split('/').pop()).join(', ')}`;
+                        
+                        const batchPromises = batch.map(fileEntry => 
+                            fileEntry.entry.async('text').then(content => {
+                                const results = processWhatsAppFile(content, fileEntry.path);
+                                return { results, fileName: fileEntry.path };
+                            }).catch(error => {
+                                console.warn(`No se pudo procesar ${fileEntry.path} como texto:`, error);
+                                return { results: [], fileName: fileEntry.path };
+                            })
+                        );
+                        
+                        const batchResults = await Promise.all(batchPromises);
+                        
+                        // Combinar resultados del lote
+                        batchResults.forEach(({results, fileName}) => {
+                            if (results.length > 0) {
+                                allResults.push(...results);
+                                console.log(`Archivo ${fileName}: ${results.length} imágenes encontradas`);
+                            }
+                        });
+                        
+                        // Pequeña pausa para no bloquear la UI
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                    
+                    updateProgress('complete', 100, `Procesados ${textFileEntries.length} archivos - ${allResults.length} imágenes encontradas en total`);
+                    batchInfo.style.display = 'none';
+                    
+                    return {
+                        data: allResults,
+                        images: imageMap
+                    };
+                } catch (error) {
+                    const errorInfo = handleProcessingError(error, 'processZipFile');
+                    throw new Error('Error al procesar el archivo ZIP: ' + errorInfo.error);
+                }
+            }
+            
+            // Función mejorada para procesar el archivo de WhatsApp
+            function processWhatsAppFile(content, fileName = 'desconocido') {
+                console.log(`Procesando archivo: ${fileName}`);
+                
+                // Si el archivo es muy grande, procesar en lotes
+                if (content.length > 1000000) { // 1MB
+                    return processLargeFileInBatches(content, 5000, fileName);
+                }
+                
+                const lines = content.split('\n');
+                const results = [];
+                
+                function isSystemMessage(line) {
+                    const systemKeywords = [
+                        'creó el grupo', 'añadió', 'Mensajes y las llamadas están cifrados',
+                        'Se eliminó este mensaje', 'Se editó este mensaje', 'cambió el asunto',
+                        'cambió la descripción', 'cambió el ícono', 'salió del grupo',
+                        'left the group', 'created the group', 'added', 
+                        'Messages and calls are encrypted', 'cambió tu código de seguridad',
+                        'Los mensajes y las llamadas están cifrados', 'Obtén más información',
+                        'salió de este grupo', 'eliminó a', 'changed the subject',
+                        'changed this group\'s icon', 'changed the description',
+                        'archivo adjunto', 'omitido', 'Security code changed',
+                        'You deleted this message', 'This message was deleted',
+                        'missed voice call', 'missed video call'
+                    ];
+                    
+                    return systemKeywords.some(keyword => 
+                        line.toLowerCase().includes(keyword.toLowerCase())
+                    );
+                }
+                
+                function isDateLine(line) {
+                    return enhancedPatterns.dateFormats.some(pattern => pattern.test(line));
+                }
+                
+                // Procesar cada línea
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    // Buscar todos los tipos de medios en la línea
+                    let mediaMatches = [];
+                    enhancedPatterns.mediaPatterns.forEach(pattern => {
+                        const matches = line.match(pattern);
+                        if (matches) {
+                            mediaMatches = mediaMatches.concat(matches.filter(m => m && !m.startsWith('<') && !m.endsWith('>')));
+                        }
+                    });
+                    
+                    if (mediaMatches.length > 0) {
+                        mediaMatches.forEach(mediaName => {
+                            let comment = 'Sin comentarios';
+                            let commentFound = false;
+                            
+                            console.log(`Encontrado medio: ${mediaName} en línea ${i + 1}`);
+                            
+                            // Estrategia 1: Buscar comentario en la misma línea (después del nombre del medio)
+                            const lineAfterMedia = line.split(mediaName)[1]?.trim();
+                            if (lineAfterMedia && !isSystemMessage(lineAfterMedia) && !isDateLine(lineAfterMedia)) {
+                                comment = lineAfterMedia;
+                                commentFound = true;
+                                console.log(`Comentario en misma línea: "${comment}"`);
+                            }
+                            
+                            // Estrategia 2: Buscar en la línea siguiente
+                            if (!commentFound && i < lines.length - 1) {
+                                const nextLine = lines[i + 1].trim();
+                                if (nextLine && !isSystemMessage(nextLine) && !isDateLine(nextLine) && 
+                                    !enhancedPatterns.mediaPatterns.some(p => p.test(nextLine))) {
+                                    comment = nextLine;
+                                    commentFound = true;
+                                    console.log(`Comentario en línea siguiente: "${comment}"`);
+                                }
+                            }
+                            
+                            // Estrategia 3: Buscar en la línea anterior
+                            if (!commentFound && i > 0) {
+                                const prevLine = lines[i - 1].trim();
+                                if (prevLine && !isSystemMessage(prevLine) && !isDateLine(prevLine) && 
+                                    !enhancedPatterns.mediaPatterns.some(p => p.test(prevLine))) {
+                                    comment = prevLine;
+                                    commentFound = true;
+                                    console.log(`Comentario en línea anterior: "${comment}"`);
+                                }
+                            }
+                            
+                            // Limpiar comentario si es un mensaje del sistema o está vacío
+                            if (isSystemMessage(comment) || !comment.trim()) {
+                                comment = 'Sin comentarios';
+                            }
+                            
+                            results.push({
+                                imageName: mediaName,
+                                comment: comment,
+                                sourceFile: fileName,
+                                lineNumber: i + 1
+                            });
+                        });
+                    }
+                }
+                
+                console.log(`Archivo ${fileName}: ${results.length} medios encontrados`);
+                
+                // Mostrar información de debug
+                debugInfo.style.display = 'block';
+                debugInfo.innerHTML = `
+                    <strong>Información de depuración:</strong><br>
+                    Archivo: ${fileName}<br>
+                    Líneas procesadas: ${lines.length}<br>
+                    Medios encontrados: ${results.length}<br>
+                    <small>Ejemplos encontrados:<br>
+                    ${results.slice(0, 5).map(r => `• ${r.imageName} → "${r.comment}" (línea ${r.lineNumber})`).join('<br>')}
+                    </small>
+                `;
+                
+                return results;
+            }
+            
+            // Procesamiento por lotes para archivos grandes
+            function processLargeFileInBatches(content, batchSize = 5000, fileName = 'desconocido') {
+                const lines = content.split('\n');
+                const batches = [];
+                
+                for (let i = 0; i < lines.length; i += batchSize) {
+                    batches.push(lines.slice(i, i + batchSize));
+                }
+                
+                const allResults = [];
+                
+                batchInfo.style.display = 'block';
+                batchInfo.textContent = `Procesando archivo grande en ${batches.length} lotes...`;
+                
+                for (let i = 0; i < batches.length; i++) {
+                    const batchLines = batches[i];
+                    const batchStartLine = i * batchSize;
+                    
+                    // Simular el procesamiento del lote (en una implementación real, esto procesaría el lote)
+                    const batchResults = processBatch(batchLines, batchStartLine, fileName);
+                    allResults.push(...batchResults);
+                    
+                    batchInfo.textContent = `Procesando lote ${i + 1}/${batches.length} (${batchResults.length} medios encontrados)...`;
+                }
+                
+                batchInfo.style.display = 'none';
+                return allResults;
+            }
+            
+            function processBatch(lines, startLine, fileName) {
+                const results = [];
+                
+                function isSystemMessage(line) {
+                    const systemKeywords = [
+                        'creó el grupo', 'añadió', 'Mensajes y las llamadas están cifrados',
+                        'Se eliminó este mensaje', 'Se editó este mensaje', 'cambió el asunto',
+                        'cambió la descripción', 'cambió el ícono', 'salió del grupo',
+                        'left the group', 'created the group', 'added', 
+                        'Messages and calls are encrypted', 'cambió tu código de seguridad',
+                        'Los mensajes y las llamadas están cifrados', 'Obtén más información',
+                        'salió de este grupo', 'eliminó a', 'changed the subject',
+                        'changed this group\'s icon', 'changed the description',
+                        'archivo adjunto'
+                    ];
+                    
+                    return systemKeywords.some(keyword => 
+                        line.toLowerCase().includes(keyword.toLowerCase())
+                    );
+                }
+                
+                function isDateLine(line) {
+                    return enhancedPatterns.dateFormats.some(pattern => pattern.test(line));
+                }
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    // Buscar imágenes de WhatsApp
+                    const imagePattern = /IMG-\d{8}-WA\d{4}\.(jpg|jpeg|png|gif|bmp|webp)/gi;
+                    const imageMatches = line.match(imagePattern);
+                    
+                    if (imageMatches) {
+                        imageMatches.forEach(imageName => {
+                            let comment = 'Sin comentarios';
+                            let commentFound = false;
+                            
+                            // Buscar comentario (lógica simplificada para lotes)
+                            const lineAfterImage = line.split(imageName)[1]?.trim();
+                            if (lineAfterImage && !isSystemMessage(lineAfterImage) && !isDateLine(lineAfterImage)) {
+                                comment = lineAfterImage;
+                                commentFound = true;
+                            }
+                            
+                            if (!commentFound && i < lines.length - 1) {
+                                const nextLine = lines[i + 1].trim();
+                                if (nextLine && !isSystemMessage(nextLine) && !isDateLine(nextLine) && !nextLine.match(imagePattern)) {
+                                    comment = nextLine;
+                                    commentFound = true;
+                                }
+                            }
+                            
+                            if (isSystemMessage(comment) || !comment.trim()) {
+                                comment = 'Sin comentarios';
+                            }
+                            
+                            results.push({
+                                imageName: imageName,
+                                comment: comment,
+                                sourceFile: fileName,
+                                lineNumber: startLine + i + 1
+                            });
+                        });
+                    }
+                }
+                
+                return results;
+            }
+            
+            // Manejo de errores mejorado
+            function handleProcessingError(error, context) {
+                console.error(`Error en ${context}:`, error);
+                
+                const errorInfo = {
+                    timestamp: new Date().toISOString(),
+                    context: context,
+                    error: error.message,
+                    stack: error.stack
+                };
+                
+                // Guardar en localStorage para debugging
+                try {
+                    const existingErrors = JSON.parse(localStorage.getItem('whatsappProcessorErrors') || '[]');
+                    existingErrors.push(errorInfo);
+                    localStorage.setItem('whatsappProcessorErrors', JSON.stringify(existingErrors.slice(-10))); // Últimos 10 errores
+                } catch (e) {
+                    console.warn('No se pudieron guardar los errores en localStorage:', e);
+                }
+                
+                return errorInfo;
+            }
+            
+            // Actualizar progreso con colores
+            function updateProgress(stage, percentage, message) {
+                progress.style.width = `${percentage}%`;
+                fileStats.textContent = message;
+                
+                // Cambiar color según el progreso
+                if (percentage < 30) {
+                    progress.style.backgroundColor = '#e74c3c'; // Rojo
+                } else if (percentage < 70) {
+                    progress.style.backgroundColor = '#f39c12'; // Naranja
+                } else {
+                    progress.style.backgroundColor = '#25D366'; // Verde WhatsApp
+                }
+            }
+            
+            // Mostrar mensaje de error
+            function showError(message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.innerHTML = `
+                    <strong>Error:</strong> ${message}
+                    <br><small>Consulta la consola para más detalles.</small>
+                `;
+                
+                document.querySelector('.upload-section').appendChild(errorDiv);
+                
+                setTimeout(() => {
+                    if (errorDiv.parentNode) {
+                        errorDiv.parentNode.removeChild(errorDiv);
+                    }
+                }, 10000);
+            }
+            
+            // Mostrar resultados en la interfaz
+            function displayResults(data) {
+                imagesContainer.innerHTML = '';
+                filteredData = [...data]; // Inicializar datos filtrados
+                
+                if (data.length === 0) {
+                    imagesContainer.innerHTML = '<div class="no-results">No se encontraron imágenes en el archivo</div>';
+                    statsInfo.textContent = 'No se encontraron imágenes para procesar.';
+                    reorderHint.style.display = 'none';
+                    searchFilterBar.style.display = 'none';
+                    return;
+                }
+                
+                // Eliminar duplicados basados en imageName
+                const uniqueData = [];
+                const seenImages = new Set();
+                
+                data.forEach(item => {
+                    if (!seenImages.has(item.imageName)) {
+                        seenImages.add(item.imageName);
+                        uniqueData.push(item);
+                    }
+                });
+                
+                // Actualizar datos procesados
+                processedData = uniqueData;
+                filteredData = [...uniqueData];
+                
+                // Mostrar tarjetas
+                filteredData.forEach((item, index) => {
+                    const imageCard = createImageCard(item, index);
+                    imagesContainer.appendChild(imageCard);
+                });
+                
+                // Actualizar estadísticas
+                statsInfo.textContent = `Se encontraron ${uniqueData.length} imágenes únicas en total (de ${data.length} detectadas). Arrastra para reordenar o haz clic en × para eliminar.`;
+                
+                // Mostrar consejo de reordenamiento
+                if (uniqueData.length > 1) {
+                    reorderHint.style.display = 'block';
+                } else {
+                    reorderHint.style.display = 'none';
+                }
+                
+                // Mostrar barra de búsqueda y filtros
+                searchFilterBar.style.display = 'flex';
+                setupSearchAndFilter(uniqueData);
+                
+                // Inicializar funcionalidad de arrastre
+                initializeSimpleDragAndDrop();
+            }
+            
+            // Configurar búsqueda y filtros
+            function setupSearchAndFilter(data) {
+                // Limpiar filtro de archivos
+                fileFilter.innerHTML = '<option value="all">Todos los archivos</option>';
+                
+                // Obtener archivos únicos
+                const uniqueFiles = [...new Set(data.map(item => item.sourceFile))];
+                uniqueFiles.forEach(file => {
+                    const option = document.createElement('option');
+                    option.value = file;
+                    option.textContent = file.split('/').pop(); // Mostrar solo el nombre del archivo
+                    fileFilter.appendChild(option);
+                });
+                
+                // Configurar eventos
+                searchInput.addEventListener('input', filterResults);
+                fileFilter.addEventListener('change', filterResults);
+                clearFilters.addEventListener('click', clearAllFilters);
+            }
+            
+            // Filtrar resultados
+            function filterResults() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedFile = fileFilter.value;
+                
+                filteredData = processedData.filter(item => {
+                    const matchesSearch = searchTerm === '' || 
+                                        item.comment.toLowerCase().includes(searchTerm) ||
+                                        item.imageName.toLowerCase().includes(searchTerm);
+                    
+                    const matchesFile = selectedFile === 'all' || item.sourceFile === selectedFile;
+                    
+                    return matchesSearch && matchesFile;
+                });
+                
+                // Actualizar vista
+                imagesContainer.innerHTML = '';
+                
+                if (filteredData.length === 0) {
+                    imagesContainer.innerHTML = '<div class="no-results">No se encontraron resultados para los filtros aplicados</div>';
+                } else {
+                    filteredData.forEach((item, index) => {
+                        const imageCard = createImageCard(item, index);
+                        imagesContainer.appendChild(imageCard);
+                    });
+                    
+                    // Re-inicializar arrastre para los elementos filtrados
+                    initializeSimpleDragAndDrop();
+                }
+                
+                // Actualizar estadísticas
+                statsInfo.textContent = `Mostrando ${filteredData.length} de ${processedData.length} imágenes`;
+            }
+            
+            // Limpiar filtros
+            function clearAllFilters() {
+                searchInput.value = '';
+                fileFilter.value = 'all';
+                filterResults();
+            }
+            
+            // Crear tarjeta de imagen
+            function createImageCard(item, index) {
+                const imageCard = document.createElement('div');
+                imageCard.className = 'image-card';
+                imageCard.setAttribute('data-index', index);
+                imageCard.draggable = true;
+                
+                // Handle de arrastre
+                const dragHandle = document.createElement('div');
+                dragHandle.className = 'drag-handle';
+                dragHandle.innerHTML = '↕';
+                dragHandle.title = 'Arrastrar para reordenar';
+                
+                // Botón de eliminar
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.innerHTML = '×';
+                deleteBtn.title = 'Eliminar imagen';
+                deleteBtn.addEventListener('click', function() {
+                    const cardIndex = filteredData.findIndex(d => d.imageName === item.imageName);
+                    if (cardIndex !== -1) {
+                        // Encontrar el índice en processedData
+                        const originalIndex = processedData.findIndex(d => d.imageName === item.imageName);
+                        if (originalIndex !== -1) {
+                            processedData.splice(originalIndex, 1);
+                        }
+                        filteredData.splice(cardIndex, 1);
+                        displayResults(processedData);
+                    }
+                });
+                
+                const imageContainer = document.createElement('div');
+                imageContainer.className = 'image-container';
+                
+                const img = document.createElement('img');
+                img.alt = item.imageName;
+                
+                // Buscar la imagen en el mapa de imágenes del ZIP
+                let imageFound = false;
+                if (imageFiles.has(item.imageName)) {
+                    img.src = imageFiles.get(item.imageName).url;
+                    imageFound = true;
+                } else {
+                    // Intentar buscar sin extensión
+                    const nameWithoutExt = item.imageName.replace(/\.[^/.]+$/, "");
+                    if (imageFiles.has(nameWithoutExt)) {
+                        img.src = imageFiles.get(nameWithoutExt).url;
+                        imageFound = true;
+                    }
+                }
+                
+                if (!imageFound) {
+                    // Si no se encuentra la imagen, mostrar un placeholder
+                    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjhGOUZBIi8+CjxwYXRoIGQ9Ik03NSA1MEgxMjVWMTUwSDc1VjUwWiIgZmlsbD0iI0RDRTBFNiIvPgo8cGF0aCBkPSJNODUgMTEwVjg1SDEwNVYxMTBIOThWOTVIOThWMTEwSDg1WiIgZmlsbD0iIzlBQUFCMSIvPgo8L3N2Zz4K';
+                }
+                
+                const imageInfo = document.createElement('div');
+                imageInfo.className = 'image-info';
+                
+                const imageName = document.createElement('div');
+                imageName.className = 'image-name';
+                imageName.textContent = item.imageName;
+                imageName.title = `Archivo origen: ${item.sourceFile} (línea ${item.lineNumber})`;
+                
+                // Cambiar textarea por input de texto
+                const commentInput = document.createElement('input');
+                commentInput.type = 'text';
+                commentInput.className = 'comment-input';
+                commentInput.placeholder = 'Comentario asociado...';
+                commentInput.value = item.comment;
+                commentInput.id = `comment-${index}`;
+                
+                // Guardar el comentario cuando cambie
+                commentInput.addEventListener('change', function() {
+                    item.comment = this.value;
+                });
+                
+                // También guardar al presionar Enter
+                commentInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        this.blur(); // Quitar el foco
+                    }
+                });
+                
+                imageContainer.appendChild(img);
+                imageInfo.appendChild(imageName);
+                imageInfo.appendChild(commentInput);
+                imageCard.appendChild(dragHandle);
+                imageCard.appendChild(deleteBtn);
+                imageCard.appendChild(imageContainer);
+                imageCard.appendChild(imageInfo);
+                
+                return imageCard;
+            }
+            
+            // SISTEMA DE ARRASTRE SIMPLIFICADO
+            function initializeSimpleDragAndDrop() {
+                const cards = document.querySelectorAll('.image-card');
+                
+                cards.forEach(card => {
+                    // Permitir arrastre desde cualquier parte de la tarjeta
+                    card.addEventListener('dragstart', handleDragStart);
+                    card.addEventListener('dragend', handleDragEnd);
+                    card.addEventListener('dragover', handleDragOver);
+                    card.addEventListener('dragenter', handleDragEnter);
+                    card.addEventListener('dragleave', handleDragLeave);
+                    card.addEventListener('drop', handleDrop);
+                });
+            }
+            
+            function handleDragStart(e) {
+                draggedItem = this;
+                dragStartIndex = parseInt(this.getAttribute('data-index'));
+                this.classList.add('dragging');
+                
+                // Efecto visual simple
+                e.dataTransfer.setData('text/plain', dragStartIndex);
+                e.dataTransfer.effectAllowed = 'move';
+                
+                console.log('Iniciando arrastre desde posición:', dragStartIndex);
+            }
+            
+            function handleDragEnd(e) {
+                this.classList.remove('dragging');
+                draggedItem = null;
+                dragStartIndex = null;
+                
+                // Limpiar todas las clases de arrastre
+                document.querySelectorAll('.image-card').forEach(card => {
+                    card.style.border = '';
+                    card.style.background = '';
+                });
+                
+                console.log('Arrastre finalizado');
+            }
+            
+            function handleDragOver(e) {
+                e.preventDefault();
+                if (draggedItem && this !== draggedItem) {
+                    e.dataTransfer.dropEffect = 'move';
+                }
+            }
+            
+            function handleDragEnter(e) {
+                e.preventDefault();
+                if (draggedItem && this !== draggedItem) {
+                    // Efecto visual simple para indicar zona de destino
+                    this.style.border = '2px solid var(--primary-color)';
+                    this.style.background = 'rgba(37, 211, 102, 0.05)';
+                }
+            }
+            
+            function handleDragLeave(e) {
+                if (draggedItem && this !== draggedItem) {
+                    // Solo remover el efecto si no estamos entrando a un elemento hijo
+                    if (!this.contains(e.relatedTarget)) {
+                        this.style.border = '';
+                        this.style.background = '';
+                    }
+                }
+            }
+            
+            function handleDrop(e) {
+                e.preventDefault();
+                
+                // Restaurar estilos
+                this.style.border = '';
+                this.style.background = '';
+                
+                if (draggedItem && this !== draggedItem) {
+                    const dragEndIndex = parseInt(this.getAttribute('data-index'));
+                    
+                    console.log('Soltando en posición:', dragEndIndex, 'desde posición:', dragStartIndex);
+                    
+                    if (dragStartIndex !== null && dragEndIndex !== null && dragStartIndex !== dragEndIndex) {
+                        // Reordenar los datos filtrados
+                        const itemToMove = filteredData[dragStartIndex];
+                        filteredData.splice(dragStartIndex, 1);
+                        filteredData.splice(dragEndIndex, 0, itemToMove);
+                        
+                        // Actualizar también los datos procesados
+                        const originalItemIndex = processedData.findIndex(item => item.imageName === itemToMove.imageName);
+                        if (originalItemIndex !== -1) {
+                            const originalItem = processedData[originalItemIndex];
+                            processedData.splice(originalItemIndex, 1);
+                            
+                            // Encontrar la nueva posición en processedData basada en el elemento en dragEndIndex
+                            const newIndexItem = filteredData[dragEndIndex];
+                            const newOriginalIndex = processedData.findIndex(item => item.imageName === newIndexItem.imageName);
+                            processedData.splice(newOriginalIndex, 0, originalItem);
+                        }
+                        
+                        // Actualizar la vista inmediatamente
+                        displayResults(processedData);
+                        
+                        // Mostrar confirmación simple
+                        showSimpleConfirmation('✓ Imagen movida correctamente');
+                    }
+                }
+            }
+            
+            function showSimpleConfirmation(message) {
+                const existingMsg = document.querySelector('.reorder-confirmation');
+                if (existingMsg) {
+                    existingMsg.remove();
+                }
+                
+                const confirmation = document.createElement('div');
+                confirmation.className = 'reorder-confirmation';
+                confirmation.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: var(--primary-color);
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+                    z-index: 10000;
+                    font-weight: bold;
+                `;
+                confirmation.textContent = message;
+                
+                document.body.appendChild(confirmation);
+                
+                setTimeout(() => {
+                    confirmation.style.opacity = '0';
+                    confirmation.style.transition = 'opacity 0.5s ease';
+                    setTimeout(() => {
+                        if (confirmation.parentNode) {
+                            confirmation.parentNode.removeChild(confirmation);
+                        }
+                    }, 500);
+                }, 2000);
+            }
+            
+            // Mejorar accesibilidad
+            function enhanceAccessibility() {
+                // Botones de exportación
+                exportCsvBtn.setAttribute('aria-label', 'Exportar resultados a formato CSV');
+                exportPdfBtn.setAttribute('aria-label', 'Exportar resultados a formato PDF');
+                
+                // Tarjetas de imagen
+                document.querySelectorAll('.image-card').forEach((card, index) => {
+                    card.setAttribute('aria-label', `Imagen ${index + 1}`);
+                    card.setAttribute('aria-describedby', `comment-${index}`);
+                });
+                
+                // Barra de progreso
+                progressBar.setAttribute('role', 'progressbar');
+                progressBar.setAttribute('aria-valuenow', '0');
+                progressBar.setAttribute('aria-valuemin', '0');
+                progressBar.setAttribute('aria-valuemax', '100');
+                
+                // Campos de búsqueda y filtro
+                searchInput.setAttribute('aria-label', 'Buscar en comentarios');
+                fileFilter.setAttribute('aria-label', 'Filtrar por archivo de origen');
+            }
+            
+            // Exportar a CSV
+            function exportToCSV(data) {
+                if (data.length === 0) return;
+                
+                let csvContent = "Nombre de imagen,Comentario asociado,Archivo origen,Línea\n";
+                
+                data.forEach(item => {
+                    // Escapar comillas y comas en los comentarios
+                    const escapedComment = item.comment.includes(',') || item.comment.includes('"') 
+                        ? `"${item.comment.replace(/"/g, '""')}"` 
+                        : item.comment;
+                    
+                    csvContent += `${item.imageName},${escapedComment},${item.sourceFile},${item.lineNumber}\n`;
+                });
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'whatsapp_images_comments.csv');
+                link.style.visibility = 'hidden';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            // Exportar a PDF con plantilla mejorada
+            async function exportToPDF(data) {
+                if (data.length === 0) return;
+                
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF();
+                
+                // Crear plantilla profesional
+                const startY = createPDFTemplate(pdf, currentTitle, data);
+                
+                // Configuración para 9 imágenes por página A4 (3x3 grid)
+                const imagesPerPage = 9;
+                const imagesPerRow = 3;
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const margin = 15;
+                
+                // Dimensiones para cada imagen en el PDF
+                const imageWidth = (pageWidth - (2 * margin) - ((imagesPerRow - 1) * 5)) / imagesPerRow;
+                const imageHeight = 60;
+                const textHeight = 20;
+                const totalCardHeight = imageHeight + textHeight;
+                
+                let currentImageIndex = 0;
+                let currentPage = 0;
+                let yPosition = startY;
+                
+                for (let i = 0; i < data.length; i++) {
+                    const item = data[i];
+                    const row = Math.floor(currentImageIndex / imagesPerRow);
+                    const col = currentImageIndex % imagesPerRow;
+                    
+                    const x = margin + (col * (imageWidth + 5));
+                    const y = yPosition + (row * totalCardHeight);
+                    
+                    // Verificar si necesitamos una nueva página
+                    if (y + totalCardHeight > pageHeight - margin) {
+                        pdf.addPage();
+                        currentPage++;
+                        currentImageIndex = 0;
+                        yPosition = margin;
+                        
+                        // Agregar número de página
+                        pdf.setFontSize(10);
+                        pdf.text(`Página ${currentPage + 1}`, pageWidth - 20, pageHeight - 10);
+                        
+                        // Recalcular posición para la nueva página
+                        const newRow = Math.floor(currentImageIndex / imagesPerRow);
+                        const newCol = currentImageIndex % imagesPerRow;
+                        const newX = margin + (newCol * (imageWidth + 5));
+                        const newY = yPosition + (newRow * totalCardHeight);
+                        
+                        await addImageToPDF(pdf, item, newX, newY, imageWidth, imageHeight);
+                        currentImageIndex++;
+                    } else {
+                        await addImageToPDF(pdf, item, x, y, imageWidth, imageHeight);
+                        currentImageIndex++;
+                    }
+                    
+                    // Si hemos alcanzado 9 imágenes en esta página, preparar para la siguiente
+                    if (currentImageIndex >= imagesPerPage) {
+                        currentImageIndex = 0;
+                        yPosition = margin;
+                        if (i < data.length - 1) {
+                            pdf.addPage();
+                            currentPage++;
+                            // Agregar número de página
+                            pdf.setFontSize(10);
+                            pdf.text(`Página ${currentPage + 1}`, pageWidth - 20, pageHeight - 10);
+                        }
+                    }
+                }
+                
+                // Guardar el PDF
+                pdf.save('whatsapp_images_report.pdf');
+            }
+            
+            // Plantilla profesional para PDF
+            function createPDFTemplate(pdf, title, data) {
+                // Cabecera con logo y título
+                pdf.setFillColor(37, 211, 102); // Verde WhatsApp
+                pdf.rect(0, 0, pdf.internal.pageSize.getWidth(), 40, 'F');
+                
+                pdf.setTextColor(255, 255, 255);
+                pdf.setFontSize(20);
+                pdf.text(title, 20, 25);
+                
+                // Información del reporte
+                pdf.setTextColor(0, 0, 0);
+                pdf.setFontSize(10);
+                pdf.text(`Generado: ${new Date().toLocaleString()}`, 20, 45);
+                pdf.text(`Total de imágenes: ${data.length}`, 20, 55);
+                
+                // Línea separadora
+                pdf.setDrawColor(37, 211, 102);
+                pdf.setLineWidth(0.5);
+                pdf.line(20, 60, pdf.internal.pageSize.getWidth() - 20, 60);
+                
+                return 70; // Retornar la posición Y inicial para el contenido
+            }
+            
+            // Función auxiliar para agregar imagen al PDF
+            async function addImageToPDF(pdf, item, x, y, width, height) {
+                try {
+                    // Verificar si tenemos la imagen real
+                    let imageData = null;
+                    if (imageFiles.has(item.imageName)) {
+                        imageData = imageFiles.get(item.imageName);
+                    } else {
+                        // Intentar buscar sin extensión
+                        const nameWithoutExt = item.imageName.replace(/\.[^/.]+$/, "");
+                        if (imageFiles.has(nameWithoutExt)) {
+                            imageData = imageFiles.get(nameWithoutExt);
+                        }
+                    }
+                    
+                    if (imageData) {
+                        // Convertir blob a base64
+                        const base64 = await blobToBase64(imageData.blob);
+                        
+                        // Agregar imagen al PDF
+                        pdf.addImage(base64, 'JPEG', x, y, width, height);
+                    } else {
+                        // Si no hay imagen real, dibujar un placeholder
+                        pdf.setDrawColor(200, 200, 200);
+                        pdf.rect(x, y, width, height, 'S');
+                        pdf.setFontSize(8);
+                        pdf.text('[Imagen no disponible]', x + 5, y + height / 2);
+                    }
+                    
+                    // SOLO agregar comentario, sin el nombre de la imagen
+                    pdf.setFontSize(7);
+                    
+                    // Solo mostrar el comentario si no está vacío
+                    if (item.comment && item.comment !== 'Sin comentarios') {
+                        const commentLines = pdf.splitTextToSize(item.comment, width - 2);
+                        pdf.text(commentLines, x, y + height + 5);
+                    }
+                    
+                } catch (error) {
+                    console.error('Error al agregar imagen al PDF:', error);
+                    // En caso de error, dibujar un placeholder
+                    pdf.setDrawColor(200, 200, 200);
+                    pdf.rect(x, y, width, height, 'S');
+                    pdf.setFontSize(8);
+                    pdf.text('[Error cargando imagen]', x + 5, y + height / 2);
+                }
+            }
+            
+            // Función para convertir blob a base64
+            function blobToBase64(blob) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        resolve(reader.result);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

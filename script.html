@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Reporte de Ticket v2.0</title>
+    <style>
+        /* Estilos básicos */
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .container { max-width: 700px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        h1, h2 { color: #333; }
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 20px; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input[type="text"], input[type="number"], input[type="date"], select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .controls { margin-top: 20px; display: flex; gap: 10px; }
+        .controls button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #generateBtn { background-color: #007bff; color: white; flex-grow: 1; }
+        #generateBtn:hover { background-color: #0056b3; }
+        #copyBtn { background-color: #28a745; color: white; flex-grow: 1; }
+        #copyBtn:hover { background-color: #1e7e34; }
+        #reportOutput {
+            width: 100%;
+            min-height: 250px;
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #000;
+            white-space: pre; 
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Generador de Reporte de Ticket</h1>
+    
+    <form id="ticketForm">
+        
+        <h2>Información del Ticket</h2>
+        <label for="ticket_id">Ticket:</label>
+        <input type="text" id="ticket_id" name="ticket_id" required>
+        
+        <label for="inicio">Inicio:</label>
+        <input type="date" id="inicio" name="inicio" required>
+        
+        <label for="ciudad">Ciudad:</label>
+        <input type="text" id="ciudad" name="ciudad" required value="MTY">
+        
+        <label for="tipo_danio">Tipo de daño:</label>
+        <input type="text" id="tipo_danio" name="tipo_danio">
+
+        <h2>Material Utilizado</h2>
+        <label for="calibre_fibra">#Calibre fibra:</label>
+        <select id="calibre_fibra" name="calibre_fibra" required>
+            <option value="48" selected>48 hilos (Predeterminado)</option>
+            <option value="12">12 hilos</option>
+            <option value="24">24 hilos</option>
+            <option value="96">96 hilos</option>
+        </select>
+        <br>
+        
+        <label for="material_fibra_optica">#Fibra Optica (metros):</label>
+        <input type="text" id="material_fibra_optica" name="material_fibra_optica">
+
+        <label for="material_cajas_empalmes">#Cajas de empalmes (cantidad):</label>
+        <input type="number" id="material_cajas_empalmes" name="material_cajas_empalmes">
+
+        <label for="material_preformados">#Preformados (cantidad):</label>
+        <input type="number" id="material_preformados" name="material_preformados">
+        
+        <label for="material_herrajes_tension">#Herrajes de tensión (cantidad):</label>
+        <input type="number" id="material_herrajes_tension" name="material_herrajes_tension">
+        
+        <label for="material_herrajes_suspension">#Herrajes de suspensión (cantidad):</label>
+        <input type="number" id="material_herrajes_suspension" name="material_herrajes_suspension">
+
+        <label for="material_etiquetas">#Etiquetas (cantidad):</label>
+        <input type="number" id="material_etiquetas" name="material_etiquetas">
+
+        <label for="material_herraje_tangente">#Herraje tangente (cantidad):</label>
+        <input type="number" id="material_herraje_tangente" name="material_herraje_tangente">
+        
+        <label for="material_neopreno">#Neopreno (cantidad):</label>
+        <input type="number" id="material_neopreno" name="material_neopreno">
+
+        <label for="material_brazo_extension">#Brazo de extensión y tipo (detalle):</label>
+        <input type="text" id="material_brazo_extension" name="material_brazo_extension">
+
+        <h2>Actividades Realizadas</h2>
+        <label for="act_jalado_instalacion">#jalado/instalación (detalle y metros):</label>
+        <input type="text" id="act_jalado_instalacion" name="act_jalado_instalacion">
+
+        <label for="act_desinstalacion_fibra">#desinstalacion de fibra (metros):</label>
+        <input type="number" id="act_desinstalacion_fibra" name="act_desinstalacion_fibra">
+
+        <label for="act_empalmes">#empalmes (cantidad):</label>
+        <input type="number" id="act_empalmes" name="act_empalmes">
+        
+        <label for="act_mantenimiento_ce">#mantenimiento a ce (cantidad):</label>
+        <input type="number" id="act_mantenimiento_ce" name="act_mantenimiento_ce">
+        
+        <label for="act_solo_baja_caja">#solo baja de caja (cantidad):</label>
+        <input type="number" id="act_solo_baja_caja" name="act_solo_baja_caja">
+
+        <label for="act_loops_raqueta">#loops/raqueta (cantidad):</label>
+        <input type="number" id="act_loops_raqueta" name="act_loops_raqueta">
+
+        <label for="act_medicion_power_meter">#medición power meter (cantidad):</label>
+        <input type="number" id="act_medicion_power_meter" name="act_medicion_power_meter">
+
+        <label for="act_medicion_otdr">#medición OTDR (cantidad):</label>
+        <input type="number" id="act_medicion_otdr" name="act_medicion_otdr">
+
+        <label for="act_mantenimiento_raqueta">#Mantenimiento raqueta (cantidad):</label>
+        <input type="number" id="act_mantenimiento_raqueta" name="act_mantenimiento_raqueta">
+
+        <label for="act_corte_longitudinal">#corte longitudinal (cantidad):</label>
+        <input type="number" id="act_corte_longitudinal" name="act_corte_longitudinal">
+
+        <label for="act_horas_resguardo">#horas de resguardo (cantidad):</label>
+        <input type="number" id="act_horas_resguardo" name="act_horas_resguardo">
+
+        <label for="act_disparo_cuadrilla">#disparo de cuadrilla (cantidad):</label>
+        <input type="number" id="act_disparo_cuadrilla" name="act_disparo_cuadrilla" value="1">
+
+        <h2>Personal que Atiende</h2>
+        <label for="atiende">Atiende (Nombres separados por coma):</label>
+        <input type="text" id="atiende" name="atiende" required>
+
+        <div class="controls">
+            <button type="button" id="generateBtn" onclick="generateReport()">Generar Reporte</button>
+            <button type="button" id="copyBtn" onclick="copyReport()" disabled>Copiar Rápido</button>
+        </div>
+    </form>
+    
+    <label for="reportOutput" style="margin-top: 20px;">Reporte Generado:</label>
+    <textarea id="reportOutput" readonly></textarea>
+</div>
+
+<script>
+    // Configurar la fecha actual al cargar la página
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+
+        const formattedDate = `${yyyy}-${mm}-${dd}`;
+        document.getElementById('inicio').value = formattedDate;
+    });
+
+    // Función auxiliar para obtener el valor del campo
+    const getVal = (id) => document.getElementById(id).value.trim();
+
+    // Función auxiliar para formatear campos y omitir vacíos
+    function formatField(id, value, prefix, calibreText = '') {
+        // Excluir si el valor es vacío o si es '0' (solo para campos numéricos)
+        if (value === '' || (document.getElementById(id).type === 'number' && value === '0')) {
+            return '';
+        }
+        
+        let finalValue = value;
+        
+        // Agregar texto del calibre si el campo es de tipo fibra y no está vacío
+        const fieldsToAppendCalibre = [
+            'material_fibra_optica', 
+            'material_preformados', 
+            'act_jalado_instalacion', 
+            'act_desinstalacion_fibra'
+        ];
+
+        if (fieldsToAppendCalibre.includes(id) && calibreText) {
+            // Se asume que el valor ya es un detalle/cantidad y el texto se añade al final
+            finalValue += ` ${calibreText}`; 
+        }
+
+        return `${prefix}${finalValue}\n`;
+    }
+
+    // Función principal para generar el reporte
+    function generateReport() {
+        let reportText = '';
+
+        // Obtener el calibre seleccionado
+        const calibre = getVal('calibre_fibra');
+        const calibreText = `de F.O. de ${calibre} hilos`;
+        
+        // ==============================================
+        // A. Información del Ticket
+        // ==============================================
+        const ticketId = getVal('ticket_id');
+        const inicio = getVal('inicio').split('-').reverse().join('-'); // Formato DD-MM-YYYY
+        const ciudad = getVal('ciudad');
+        const tipoDanio = getVal('tipo_danio');
+
+        if (ticketId) reportText += `Ticket: ${ticketId}\n`;
+        if (inicio) reportText += `* Inicio: ${inicio}\n`;
+        if (ciudad) reportText += `* Ciudad: ${ciudad}\n`;
+        
+        // ==============================================
+        // B. Material
+        // ==============================================
+        let materialSection = '';
+        materialSection += formatField('material_fibra_optica', getVal('material_fibra_optica'), '#Fibra Optica: ', calibreText);
+        materialSection += formatField('material_cajas_empalmes', getVal('material_cajas_empalmes'), '#Cajas de empalmes: ');
+        materialSection += formatField('material_preformados', getVal('material_preformados'), '#Preformados: ', calibreText);
+        materialSection += formatField('material_herrajes_tension', getVal('material_herrajes_tension'), '#Herrajes de tensión: ');
+        materialSection += formatField('material_herrajes_suspension', getVal('material_herrajes_suspension'), '#Herrajes de suspensión: ');
+        materialSection += formatField('material_etiquetas', getVal('material_etiquetas'), '#Etiquetas: ');
+        materialSection += formatField('material_herraje_tangente', getVal('material_herraje_tangente'), '#Herraje tangente: ');
+        materialSection += formatField('material_neopreno', getVal('material_neopreno'), '#Neopreno: ');
+        materialSection += formatField('material_brazo_extension', getVal('material_brazo_extension'), '#Brazo de extensión y tipo: ');
+
+        if (materialSection) {
+            reportText += `Material\n${materialSection}`;
+        }
+        
+        // C. Tipo de daño (separado por línea vacía)
+        if (tipoDanio) {
+            reportText += `Tipo de daño: ${tipoDanio}\n \n`;
+        }
+
+        // ==============================================
+        // D. Actividades Realizadas
+        // ==============================================
+        let actividadesSection = '';
+        actividadesSection += formatField('act_jalado_instalacion', getVal('act_jalado_instalacion'), '#jalado/instalación: ', calibreText);
+        actividadesSection += formatField('act_desinstalacion_fibra', getVal('act_desinstalacion_fibra'), '#desinstalacion de fibra: ', calibreText);
+        actividadesSection += formatField('act_empalmes', getVal('act_empalmes'), '#empalmes: ');
+        actividadesSection += formatField('act_mantenimiento_ce', getVal('act_mantenimiento_ce'), '#mantenimiento a ce: ');
+        actividadesSection += formatField('act_solo_baja_caja', getVal('act_solo_baja_caja'), '#solo baja de caja: ');
+        actividadesSection += formatField('act_loops_raqueta', getVal('act_loops_raqueta'), '#loops/raqueta: ');
+        actividadesSection += formatField('act_medicion_power_meter', getVal('act_medicion_power_meter'), '#medición power meter: ');
+        actividadesSection += formatField('act_medicion_otdr', getVal('act_medicion_otdr'), '#medición OTDR: ');
+        actividadesSection += formatField('act_mantenimiento_raqueta', getVal('act_mantenimiento_raqueta'), '#Mantenimiento raqueta: ');
+        actividadesSection += formatField('act_corte_longitudinal', getVal('act_corte_longitudinal'), '#corte longitudinal: ');
+        actividadesSection += formatField('act_horas_resguardo', getVal('act_horas_resguardo'), '#horas de resguardo: ');
+        actividadesSection += formatField('act_disparo_cuadrilla', getVal('act_disparo_cuadrilla'), '#disparo de cuadrilla: ');
+
+        if (actividadesSection) {
+            reportText += `Actividades realizadas\n${actividadesSection}\n`;
+        }
+
+        // ==============================================
+        // E. Personal Atiende
+        // ==============================================
+        const atiende = getVal('atiende');
+        if (atiende) {
+            reportText += `Atiende: ${atiende}`;
+        }
+        
+        // Mostrar el reporte y habilitar el botón de copiado
+        document.getElementById('reportOutput').value = reportText.trim();
+        document.getElementById('copyBtn').disabled = !reportText.trim();
+    }
+
+    // Función para copiar el contenido del textarea
+    function copyReport() {
+        const output = document.getElementById('reportOutput');
+        
+        output.select();
+        output.setSelectionRange(0, 99999); // Para móviles
+        navigator.clipboard.writeText(output.value).then(() => {
+            const originalText = document.getElementById('copyBtn').textContent;
+            document.getElementById('copyBtn').textContent = '¡Copiado!';
+            setTimeout(() => {
+                document.getElementById('copyBtn').textContent = originalText;
+            }, 2000);
+        }).catch(err => {
+            console.error('Error al copiar: ', err);
+            alert('Error al copiar el texto. Por favor, cópielo manualmente.');
+        });
+    }
+</script>
+
+</body>
+</html>

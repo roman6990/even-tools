@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analizador de Horas Trabajadas</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        h1 {
+            color: #1e293b;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+
+        /* Área de carga */
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 25px;
+            background-color: #f8fafc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #64748b;
+            background-color: #f1f5f9;
+        }
+
+        .upload-area.dragover {
+            border-color: #10b981;
+            background-color: #ecfdf5;
+        }
+
+        .upload-area p {
+            font-size: 1.1em;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+
+        .upload-area small {
+            color: #64748b;
+            font-size: 0.9em;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* Botones */
+        .btn-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 8px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background-color: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-export {
+            background-color: #10b981;
+        }
+
+        .btn-export:hover {
+            background-color: #059669;
+        }
+
+        .btn-details {
+            background-color: #f59e0b;
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .btn-details:hover {
+            background-color: #d97706;
+        }
+
+        .btn-filter {
+            background-color: #6366f1;
+        }
+
+        /* Resultados */
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+
+        /* Selector de rango de fechas */
+        .date-range-selector {
+            background-color: #f0f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #bae6fd;
+        }
+
+        .date-range-selector h4 {
+            margin-bottom: 15px;
+            color: #0369a1;
+            font-size: 1.1em;
+        }
+
+        .date-filters {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .date-filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .date-filter-group label {
+            font-weight: 500;
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .date-input {
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .date-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .current-range {
+            margin-top: 12px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        /* Búsqueda */
+        .search-container {
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Tablas */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            font-size: 13px;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Alertas */
+        .alert {
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background-color: #f0fdf4;
+            border-color: #10b981;
+            color: #065f46;
+        }
+
+        .alert-error {
+            background-color: #fef2f2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+
+        .alert-warning {
+            background-color: #fffbeb;
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+
+        /* Resumen */
+        .summary {
+            background-color: #f0f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #0ea5e9;
+        }
+
+        .summary h3 {
+            margin-bottom: 12px;
+            color: #0369a1;
+        }
+
+        .summary p {
+            margin: 6px 0;
+            font-size: 14px;
+        }
+
+        /* Información de período */
+        .period-info {
+            background-color: #f8fafc;
+            padding: 16px;
+            border-radius: 6px;
+            margin: 12px 0;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Resaltado */
+        .highlight {
+            background-color: #fffbeb !important;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .selected {
+            background-color: #eff6ff !important;
+            border-left: 4px solid #3b82f6;
+        }
+
+        /* Detalles del empleado */
+        .employee-details {
+            margin-top: 24px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background-color: #f8fafc;
+            display: none;
+        }
+
+        .employee-details h3 {
+            margin-bottom: 16px;
+            color: #1e293b;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 12px;
+        }
+
+        .details-table {
+            width: 100%;
+            margin-top: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .details-table th {
+            background-color: #e2e8f0;
+        }
+
+        /* Sin resultados */
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        /* Indicador de carga */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Configuración de formato */
+        .format-config {
+            background-color: #fefce8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #fde68a;
+        }
+
+        .format-config h4 {
+            margin-bottom: 15px;
+            color: #92400e;
+            font-size: 1.1em;
+        }
+
+        .format-options {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .format-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .format-group label {
+            font-weight: 500;
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .format-select {
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+            background-color: white;
+        }
+
+        .format-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .date-filters, .format-options {
+                flex-direction: column;
+            }
+            
+            .date-filter-group, .format-group {
+                min-width: 100%;
+            }
+            
+            .btn {
+                margin: 4px;
+                width: calc(50% - 8px);
+            }
+            
+            th, td {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Analizador de Horas Trabajadas</h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <p>Haz clic aquí o arrastra un archivo Excel</p>
+            <p><small>Formatos soportados: .xlsx, .xls, .csv, .ods</small></p>
+            <input type="file" id="fileInput" accept=".xlsx, .xls, .csv, .ods">
+        </div>
+        
+        <div class="format-config" id="formatConfig" style="display: none;">
+            <h4>Configuración de Formato</h4>
+            <div class="format-options">
+                <div class="format-group">
+                    <label for="dateColumn">Columna de Fecha:</label>
+                    <select id="dateColumn" class="format-select">
+                        <option value="0">Columna A</option>
+                        <option value="1">Columna B</option>
+                        <option value="2">Columna C</option>
+                        <option value="3">Columna D</option>
+                        <option value="4">Columna E</option>
+                    </select>
+                </div>
+                <div class="format-group">
+                    <label for="hoursColumn">Columna de Horas:</label>
+                    <select id="hoursColumn" class="format-select">
+                        <option value="8">Columna I</option>
+                        <option value="7">Columna H</option>
+                        <option value="6">Columna G</option>
+                        <option value="5">Columna F</option>
+                        <option value="4">Columna E</option>
+                    </select>
+                </div>
+                <div class="format-group">
+                    <label for="headerRow">Fila de Encabezados:</label>
+                    <select id="headerRow" class="format-select">
+                        <option value="0">Fila 1</option>
+                        <option value="1">Fila 2</option>
+                        <option value="2">Fila 3</option>
+                        <option value="3">Fila 4</option>
+                        <option value="4">Fila 5</option>
+                    </select>
+                </div>
+                <button class="btn" id="applyFormat">Aplicar Formato</button>
+            </div>
+        </div>
+        
+        <div class="btn-container">
+            <button class="btn" id="analyzeBtn" disabled>
+                <span class="btn-text">Analizar Datos</span>
+            </button>
+            <button class="btn btn-export" id="exportBtn" disabled>Exportar CSV</button>
+        </div>
+        
+        <div id="alertArea"></div>
+        
+        <div class="results" id="results">
+            <div class="date-range-selector" id="dateRangeSelector" style="display: none;">
+                <h4>Filtrar por Rango de Fechas</h4>
+                <div class="date-filters">
+                    <div class="date-filter-group">
+                        <label for="startDate">Fecha Inicio:</label>
+                        <input type="date" id="startDate" class="date-input">
+                    </div>
+                    <div class="date-filter-group">
+                        <label for="endDate">Fecha Fin:</label>
+                        <input type="date" id="endDate" class="date-input">
+                    </div>
+                    <button class="btn btn-filter" id="applyDateFilter">Aplicar Filtro</button>
+                    <button class="btn" id="clearDateFilter">Mostrar Todo</button>
+                </div>
+                <div class="current-range" id="currentRange"></div>
+            </div>
+            
+            <div class="summary" id="summary"></div>
+            
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar empleado...">
+            </div>
+            
+            <div class="table-container">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>Empleado</th>
+                            <th>Período</th>
+                            <th>Días Únicos</th>
+                            <th>Horas Totales</th>
+                            <th>Promedio Horas/Día</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="employee-details" id="employeeDetails">
+                <h3 id="detailsTitle">Detalles del Empleado</h3>
+                <div id="detailsContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let workbook = null;
+        let analysisResults = [];
+        let employeeDetails = new Map();
+        let allPeriodsData = [];
+        let currentDateFilter = null;
+        let fileFormat = {
+            dateColumn: 0,
+            hoursColumn: 8,
+            headerRow: 0
+        };
+
+        // Elementos del DOM
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const results = document.getElementById('results');
+        const resultsBody = document.getElementById('resultsBody');
+        const summary = document.getElementById('summary');
+        const alertArea = document.getElementById('alertArea');
+        const searchInput = document.getElementById('searchInput');
+        const employeeDetailsDiv = document.getElementById('employeeDetails');
+        const detailsTitle = document.getElementById('detailsTitle');
+        const detailsContent = document.getElementById('detailsContent');
+        const dateRangeSelector = document.getElementById('dateRangeSelector');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const applyDateFilter = document.getElementById('applyDateFilter');
+        const clearDateFilter = document.getElementById('clearDateFilter');
+        const currentRange = document.getElementById('currentRange');
+        const formatConfig = document.getElementById('formatConfig');
+        const dateColumnSelect = document.getElementById('dateColumn');
+        const hoursColumnSelect = document.getElementById('hoursColumn');
+        const headerRowSelect = document.getElementById('headerRow');
+        const applyFormatBtn = document.getElementById('applyFormat');
+
+        // Event Listeners
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelection();
+            }
+        });
+        
+        fileInput.addEventListener('change', handleFileSelection);
+        analyzeBtn.addEventListener('click', analyzeData);
+        exportBtn.addEventListener('click', exportToCSV);
+        searchInput.addEventListener('input', filterEmployees);
+        applyDateFilter.addEventListener('click', applyDateRangeFilter);
+        clearDateFilter.addEventListener('click', clearDateRangeFilter);
+        applyFormatBtn.addEventListener('click', applyFormatConfig);
+
+        // Manejar selección de archivo
+        function handleFileSelection() {
+            if (fileInput.files.length === 0) return;
+            
+            const file = fileInput.files[0];
+            
+            // Validar tipo de archivo
+            if (!file.name.match(/\.(xlsx|xls|csv|ods)$/i)) {
+                showAlert('Por favor, selecciona un archivo compatible (.xlsx, .xls, .csv, .ods).', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    
+                    // Determinar el tipo de archivo y leerlo apropiadamente
+                    if (file.name.match(/\.csv$/i)) {
+                        // Para archivos CSV
+                        const csvData = new TextDecoder('utf-8').decode(data);
+                        workbook = XLSX.read(csvData, { type: 'string', codepage: 65001 });
+                    } else {
+                        // Para archivos Excel y ODS
+                        workbook = XLSX.read(data, { type: 'array', codepage: 65001 });
+                    }
+                    
+                    analyzeBtn.disabled = false;
+                    formatConfig.style.display = 'block';
+                    showAlert('Archivo cargado correctamente. Configura el formato si es necesario.', 'success');
+                } catch (error) {
+                    showAlert('Error al leer el archivo: ' + error.message, 'error');
+                }
+            };
+            
+            reader.onerror = function() {
+                showAlert('Error al leer el archivo.', 'error');
+            };
+            
+            if (file.name.match(/\.csv$/i)) {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        // Aplicar configuración de formato
+        function applyFormatConfig() {
+            fileFormat.dateColumn = parseInt(dateColumnSelect.value);
+            fileFormat.hoursColumn = parseInt(hoursColumnSelect.value);
+            fileFormat.headerRow = parseInt(headerRowSelect.value);
+            
+            showAlert('Configuración de formato aplicada correctamente.', 'success');
+        }
+
+        // Función MEJORADA para parsear fechas
+        function parseExcelDate(dateStr) {
+            if (!dateStr) return null;
+            
+            const str = String(dateStr).trim();
+            
+            // Si ya es un objeto Date válido
+            if (dateStr instanceof Date && !isNaN(dateStr.getTime())) {
+                return dateStr;
+            }
+            
+            // Si es un número de Excel (días desde 1900)
+            if (!isNaN(dateStr) && typeof dateStr === 'number') {
+                // Excel usa 1 = 1 de enero de 1900, pero tiene un bug que considera 1900 como año bisiesto
+                const excelEpoch = new Date(1900, 0, 1);
+                const date = new Date(excelEpoch.getTime() + (dateStr - 1) * 24 * 60 * 60 * 1000);
+                // Ajustar por el bug de Excel (considera 1900 como bisiesto)
+                if (dateStr >= 60) {
+                    date.setTime(date.getTime() - 24 * 60 * 60 * 1000);
+                }
+                return date;
+            }
+            
+            // Intentar diferentes formatos de fecha
+            const formats = [
+                // Formato dd/mm/yyyy o dd-mm-yyyy
+                /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/,
+                // Formato mm/dd/yyyy o mm-dd-yyyy
+                /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/,
+                // Formato yyyy-mm-dd
+                /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/
+            ];
+            
+            for (const format of formats) {
+                const match = str.match(format);
+                if (match) {
+                    let day, month, year;
+                    
+                    if (format === formats[2]) {
+                        // Formato yyyy-mm-dd
+                        year = parseInt(match[1]);
+                        month = parseInt(match[2]) - 1;
+                        day = parseInt(match[3]);
+                    } else {
+                        // Intentar determinar si es dd/mm o mm/dd
+                        const first = parseInt(match[1]);
+                        const second = parseInt(match[2]);
+                        
+                        if (first > 12) {
+                            // Es dd/mm/yyyy
+                            day = first;
+                            month = second - 1;
+                        } else if (second > 12) {
+                            // Es mm/dd/yyyy
+                            month = first - 1;
+                            day = second;
+                        } else {
+                            // Ambos son <= 12, asumimos dd/mm/yyyy (formato más común en español)
+                            day = first;
+                            month = second - 1;
+                        }
+                        
+                        year = parseInt(match[3]);
+                    }
+                    
+                    // Validar año razonable (entre 2000 y 2030)
+                    if (year >= 2000 && year <= 2030) {
+                        const date = new Date(year, month, day);
+                        if (!isNaN(date.getTime())) {
+                            return date;
+                        }
+                    }
+                }
+            }
+            
+            // Intentar parseo directo
+            const date = new Date(str);
+            if (!isNaN(date.getTime()) && date.getFullYear() >= 2000 && date.getFullYear() <= 2030) {
+                return date;
+            }
+            
+            console.warn('No se pudo parsear la fecha:', dateStr);
+            return null;
+        }
+
+        // Detectar período en el nombre de la hoja
+        function detectPeriodFromSheet(sheetName) {
+            const datePatterns = [
+                /\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\b/gi,
+                /\b(\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2})\b/gi,
+                /\b(\w+\s+\d{4})\b/gi,
+                /\b(\d{1,2}[\/\-]\d{4})\b/gi
+            ];
+            
+            for (const pattern of datePatterns) {
+                const matches = sheetName.match(pattern);
+                if (matches && matches.length > 0) {
+                    return matches.join(' - ');
+                }
+            }
+            
+            return "Período no especificado";
+        }
+
+        // Obtener rango de fechas de los datos
+        function getDateRangeFromData(jsonData, startRow) {
+            let minDate = null;
+            let maxDate = null;
+            
+            for (let i = startRow; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (!row || row.length < 1) continue;
+                
+                const dateStr = String(row[fileFormat.dateColumn]).trim();
+                if (!dateStr || dateStr.toLowerCase().includes('date')) continue;
+                
+                const date = parseExcelDate(dateStr);
+                if (date && !isNaN(date.getTime())) {
+                    if (!minDate || date < minDate) minDate = date;
+                    if (!maxDate || date > maxDate) maxDate = date;
+                }
+            }
+            
+            return {
+                min: minDate,
+                max: maxDate,
+                rangeStr: minDate && maxDate ? 
+                    `${minDate.toLocaleDateString('es-ES')} - ${maxDate.toLocaleDateString('es-ES')}` : 
+                    "Rango no disponible"
+            };
+        }
+
+        // Función para extraer el nombre del empleado de la hoja
+        function getEmployeeNameFromSheet(worksheet, sheetName) {
+            const cellA1 = worksheet['A1'];
+            if (cellA1 && cellA1.v) {
+                return String(cellA1.v).trim();
+            }
+            
+            const range = XLSX.utils.decode_range(worksheet['!ref']);
+            for (let R = range.s.r; R <= Math.min(range.e.r, 10); ++R) {
+                const cell = worksheet[XLSX.utils.encode_cell({r:R, c:0})];
+                if (cell && cell.v && String(cell.v).trim().length > 0) {
+                    const value = String(cell.v).trim();
+                    if (!value.toLowerCase().includes('date') && 
+                        !value.toLowerCase().includes('clock') &&
+                        !value.toLowerCase().includes('total') &&
+                        !value.toLowerCase().includes('breaks')) {
+                        return value;
+                    }
+                }
+            }
+            
+            return sheetName;
+        }
+
+        // Analizar datos
+        function analyzeData() {
+            if (!workbook) {
+                showAlert('Primero carga un archivo Excel.', 'error');
+                return;
+            }
+            
+            try {
+                // Mostrar indicador de carga
+                const btnText = analyzeBtn.querySelector('.btn-text');
+                btnText.innerHTML = '<div class="loading"></div>Analizando...';
+                analyzeBtn.disabled = true;
+                
+                setTimeout(() => {
+                    analysisResults = [];
+                    employeeDetails.clear();
+                    allPeriodsData = [];
+                    
+                    const sheetNames = workbook.SheetNames;
+                    
+                    sheetNames.forEach(sheetName => {
+                        if (sheetName !== 'Summary' && sheetName !== 'All Notes' && 
+                            !sheetName.includes('Summary for period') && 
+                            !sheetName.includes('Notes for period')) {
+                            
+                            const worksheet = workbook.Sheets[sheetName];
+                            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true, defval: "" });
+                            
+                            const employeeName = getEmployeeNameFromSheet(worksheet, sheetName);
+                            const period = detectPeriodFromSheet(sheetName);
+                            
+                            let startRow = fileFormat.headerRow;
+                            for (let i = fileFormat.headerRow; i < jsonData.length; i++) {
+                                if (jsonData[i] && jsonData[i][fileFormat.dateColumn] && 
+                                    String(jsonData[i][fileFormat.dateColumn]).toLowerCase().includes('date')) {
+                                    startRow = i + 1;
+                                    break;
+                                }
+                            }
+                            
+                            if (startRow === -1) {
+                                console.warn(`No se encontraron datos de turnos para ${employeeName}`);
+                                return;
+                            }
+                            
+                            // Obtener rango de fechas
+                            const dateRange = getDateRangeFromData(jsonData, startRow);
+                            
+                            const dateHoursMap = new Map();
+                            let totalHours = 0;
+                            
+                            for (let i = startRow; i < jsonData.length; i++) {
+                                const row = jsonData[i];
+                                if (!row || row.length < fileFormat.hoursColumn + 1) continue;
+                                
+                                const date = row[fileFormat.dateColumn];
+                                let hours = row[fileFormat.hoursColumn];
+                                
+                                if (typeof hours === 'string') {
+                                    hours = hours.replace(',', '.');
+                                }
+                                hours = parseFloat(hours);
+                                
+                                if (date && !isNaN(hours) && hours > 0) {
+                                    const dateStr = String(date).trim();
+                                    totalHours += hours;
+                                    
+                                    if (dateHoursMap.has(dateStr)) {
+                                        dateHoursMap.set(dateStr, dateHoursMap.get(dateStr) + hours);
+                                    } else {
+                                        dateHoursMap.set(dateStr, hours);
+                                    }
+                                }
+                            }
+                            
+                            const uniqueDays = dateHoursMap.size;
+                            const avgHoursPerDay = uniqueDays > 0 ? totalHours / uniqueDays : 0;
+                            
+                            const result = {
+                                employee: employeeName,
+                                period: period,
+                                uniqueDays: uniqueDays,
+                                totalHours: parseFloat(totalHours.toFixed(2)),
+                                avgHoursPerDay: parseFloat(avgHoursPerDay.toFixed(2)),
+                                dateRange: dateRange,
+                                sheetName: sheetName,
+                                // Guardar todos los datos originales para el filtrado
+                                originalDates: Array.from(dateHoursMap.entries()).map(([date, hours]) => ({
+                                    date: date,
+                                    hours: parseFloat(hours.toFixed(2)),
+                                    dateObj: parseExcelDate(date)
+                                }))
+                            };
+                            
+                            analysisResults.push(result);
+                            allPeriodsData.push(result);
+                            
+                            employeeDetails.set(`${employeeName}_${sheetName}`, {
+                                dates: Array.from(dateHoursMap.entries()).map(([date, hours]) => ({
+                                    date: date,
+                                    hours: parseFloat(hours.toFixed(2)),
+                                    dateObj: parseExcelDate(date)
+                                })),
+                                totalHours: parseFloat(totalHours.toFixed(2)),
+                                period: period,
+                                dateRange: dateRange
+                            });
+                        }
+                    });
+                    
+                    // Ordenar por horas promedio descendente
+                    analysisResults.sort((a, b) => b.avgHoursPerDay - a.avgHoursPerDay);
+                    
+                    // Configurar selectores de fecha
+                    setupDateRangeSelector();
+                    
+                    displayResults();
+                    exportBtn.disabled = false;
+                    dateRangeSelector.style.display = 'block';
+                    
+                    // Restaurar texto del botón
+                    btnText.innerHTML = 'Analizar Datos';
+                    analyzeBtn.disabled = false;
+                    
+                    showAlert(`Análisis completado. Se procesaron ${analysisResults.length} períodos.`, 'success');
+                    
+                }, 100); // Pequeño delay para permitir que se muestre el indicador de carga
+                
+            } catch (error) {
+                showAlert('Error al analizar los datos: ' + error.message, 'error');
+                console.error(error);
+                
+                // Restaurar texto del botón en caso de error
+                const btnText = analyzeBtn.querySelector('.btn-text');
+                btnText.innerHTML = 'Analizar Datos';
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        // Configurar selectores de fecha
+        function setupDateRangeSelector() {
+            if (allPeriodsData.length === 0) return;
+            
+            let globalMinDate = null;
+            let globalMaxDate = null;
+            
+            allPeriodsData.forEach(period => {
+                if (period.dateRange.min && (!globalMinDate || period.dateRange.min < globalMinDate)) {
+                    globalMinDate = period.dateRange.min;
+                }
+                if (period.dateRange.max && (!globalMaxDate || period.dateRange.max > globalMaxDate)) {
+                    globalMaxDate = period.dateRange.max;
+                }
+            });
+            
+            if (globalMinDate) {
+                // Usar fecha exacta sin ajustes
+                startDateInput.valueAsDate = globalMinDate;
+            }
+            if (globalMaxDate) {
+                // Usar fecha exacta sin ajustes
+                endDateInput.valueAsDate = globalMaxDate;
+            }
+            
+            currentRange.textContent = `Rango completo: ${globalMinDate ? globalMinDate.toLocaleDateString('es-ES') : 'N/A'} - ${globalMaxDate ? globalMaxDate.toLocaleDateString('es-ES') : 'N/A'}`;
+        }
+
+        // Aplicar filtro por rango de fechas
+        function applyDateRangeFilter() {
+            const startDate = startDateInput.valueAsDate;
+            const endDate = endDateInput.valueAsDate;
+            
+            if (!startDate || !endDate) {
+                showAlert('Selecciona ambas fechas para filtrar.', 'error');
+                return;
+            }
+            
+            if (startDate > endDate) {
+                showAlert('La fecha de inicio no puede ser mayor que la fecha fin.', 'error');
+                return;
+            }
+            
+            currentDateFilter = { 
+                start: new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()),
+                end: new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+            };
+            
+            // Filtrar períodos que se solapan con el rango seleccionado
+            analysisResults = allPeriodsData.filter(period => {
+                if (!period.dateRange.min || !period.dateRange.max) return false;
+                
+                // Verificar solapamiento exacto - sin ajustar días
+                const periodMin = new Date(period.dateRange.min.getFullYear(), period.dateRange.min.getMonth(), period.dateRange.min.getDate());
+                const periodMax = new Date(period.dateRange.max.getFullYear(), period.dateRange.max.getMonth(), period.dateRange.max.getDate());
+                
+                return (periodMin <= currentDateFilter.end && periodMax >= currentDateFilter.start);
+            });
+            
+            // Reordenar
+            analysisResults.sort((a, b) => b.avgHoursPerDay - a.avgHoursPerDay);
+            
+            currentRange.textContent = `Filtro aplicado: ${currentDateFilter.start.toLocaleDateString('es-ES')} - ${currentDateFilter.end.toLocaleDateString('es-ES')}`;
+            displayResults();
+            showAlert(`Filtro aplicado. Mostrando ${analysisResults.length} períodos.`, 'success');
+        }
+
+        // Limpiar filtro de fechas
+        function clearDateRangeFilter() {
+            currentDateFilter = null;
+            analysisResults = [...allPeriodsData];
+            analysisResults.sort((a, b) => b.avgHoursPerDay - a.avgHoursPerDay);
+            
+            setupDateRangeSelector();
+            displayResults();
+            showAlert('Filtro de fechas eliminado.', 'success');
+        }
+
+        // Mostrar resultados en la tabla
+        function displayResults() {
+            resultsBody.innerHTML = '';
+            
+            if (analysisResults.length === 0) {
+                resultsBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="no-results">
+                            No hay datos que coincidan con el filtro actual.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            analysisResults.forEach((result, index) => {
+                const row = document.createElement('tr');
+                if (result.avgHoursPerDay > 14) {
+                    row.classList.add('highlight');
+                }
+                
+                row.innerHTML = `
+                    <td>${result.employee}</td>
+                    <td>${result.period}</td>
+                    <td>${result.uniqueDays}</td>
+                    <td>${result.totalHours}</td>
+                    <td>${result.avgHoursPerDay}</td>
+                    <td>
+                        <button class="btn btn-details" onclick="showEmployeeDetails('${result.employee.replace(/'/g, "\\'")}', '${result.sheetName.replace(/'/g, "\\'")}', this)">
+                            Ver Detalles
+                        </button>
+                    </td>
+                `;
+                
+                resultsBody.appendChild(row);
+            });
+            
+            // Actualizar resumen
+            const totalEmployees = new Set(analysisResults.map(r => r.employee)).size;
+            const totalPeriods = analysisResults.length;
+            const highWorkload = analysisResults.filter(r => r.avgHoursPerDay > 14).length;
+            const highestAvg = analysisResults.length > 0 ? analysisResults[0].avgHoursPerDay : 0;
+            
+            let periodInfo = '';
+            if (currentDateFilter) {
+                periodInfo = `<div class="period-info">
+                    <strong>Período filtrado:</strong> ${currentDateFilter.start.toLocaleDateString('es-ES')} - ${currentDateFilter.end.toLocaleDateString('es-ES')}
+                </div>`;
+            }
+            
+            summary.innerHTML = `
+                <h3>Resumen del Análisis</h3>
+                ${periodInfo}
+                <p><strong>Total de empleados:</strong> ${totalEmployees}</p>
+                <p><strong>Total de períodos analizados:</strong> ${totalPeriods}</p>
+                <p><strong>Períodos con carga alta (>14 hrs/día):</strong> ${highWorkload}</p>
+                <p><strong>Promedio más alto:</strong> ${highestAvg.toFixed(2)} hrs/día</p>
+            `;
+            
+            results.style.display = 'block';
+        }
+
+        // Filtrar empleados por búsqueda
+        function filterEmployees() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const rows = resultsBody.getElementsByTagName('tr');
+            
+            let visibleCount = 0;
+            
+            for (let row of rows) {
+                const employeeName = row.cells[0].textContent.toLowerCase();
+                
+                if (employeeName.includes(searchTerm)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+            
+            if (visibleCount === 0 && searchTerm) {
+                if (!document.getElementById('noResults')) {
+                    const noResults = document.createElement('tr');
+                    noResults.id = 'noResults';
+                    noResults.innerHTML = `<td colspan="6" class="no-results">No se encontraron empleados que coincidan con "${searchTerm}"</td>`;
+                    resultsBody.appendChild(noResults);
+                }
+            } else {
+                const noResults = document.getElementById('noResults');
+                if (noResults) {
+                    noResults.remove();
+                }
+            }
+        }
+
+        // Mostrar detalles del empleado con filtro aplicado
+        function showEmployeeDetails(employeeName, sheetName, button) {
+            const previouslySelected = document.querySelector('.selected');
+            if (previouslySelected) {
+                previouslySelected.classList.remove('selected');
+            }
+            
+            const row = button.closest('tr');
+            row.classList.add('selected');
+            
+            const detailsKey = `${employeeName}_${sheetName}`;
+            const details = employeeDetails.get(detailsKey);
+            
+            if (!details) {
+                detailsContent.innerHTML = '<p>No hay detalles disponibles para este empleado.</p>';
+                employeeDetailsDiv.style.display = 'block';
+                return;
+            }
+            
+            // Filtrar fechas según el filtro actual
+            let filteredDates = details.dates;
+            let filteredTotalHours = details.totalHours;
+            let filteredUniqueDays = details.dates.length;
+            
+            if (currentDateFilter) {
+                filteredDates = details.dates.filter(dateInfo => {
+                    if (!dateInfo.dateObj) return false;
+                    // Filtro EXACTO - sin ajustar días
+                    const dateOnly = new Date(dateInfo.dateObj.getFullYear(), dateInfo.dateObj.getMonth(), dateInfo.dateObj.getDate());
+                    return dateOnly >= currentDateFilter.start && dateOnly <= currentDateFilter.end;
+                });
+                
+                // Recalcular totales con las fechas filtradas
+                filteredTotalHours = filteredDates.reduce((total, dateInfo) => total + dateInfo.hours, 0);
+                filteredUniqueDays = filteredDates.length;
+            }
+            
+            const sortedDates = filteredDates.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            let detailsHTML = `
+                <div class="period-info">
+                    <strong>Período:</strong> ${details.period}<br>
+                    <strong>Rango de fechas:</strong> ${details.dateRange.rangeStr}<br>
+                    ${currentDateFilter ? `<strong>Filtro aplicado:</strong> ${currentDateFilter.start.toLocaleDateString('es-ES')} - ${currentDateFilter.end.toLocaleDateString('es-ES')}<br>` : ''}
+                    <strong>Total de horas:</strong> ${filteredTotalHours.toFixed(2)}<br>
+                    <strong>Total de días trabajados:</strong> ${filteredUniqueDays}
+                </div>
+                <table class="details-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Horas Trabajadas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            if (sortedDates.length === 0) {
+                detailsHTML += `
+                    <tr>
+                        <td colspan="2" style="text-align: center; color: #64748b; font-style: italic;">
+                            No hay registros en el rango de fechas seleccionado
+                        </td>
+                    </tr>
+                `;
+            } else {
+                sortedDates.forEach(dateInfo => {
+                    detailsHTML += `
+                        <tr>
+                            <td>${dateInfo.date}</td>
+                            <td>${dateInfo.hours} hrs</td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            detailsHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            let title = `Detalles de ${employeeName} - ${details.period}`;
+            if (currentDateFilter) {
+                title += ` (Filtrado: ${currentDateFilter.start.toLocaleDateString('es-ES')} - ${currentDateFilter.end.toLocaleDateString('es-ES')})`;
+            }
+            
+            detailsTitle.textContent = title;
+            detailsContent.innerHTML = detailsHTML;
+            employeeDetailsDiv.style.display = 'block';
+            
+            employeeDetailsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Exportar a CSV
+        function exportToCSV() {
+            if (analysisResults.length === 0) {
+                showAlert('No hay datos para exportar.', 'error');
+                return;
+            }
+            
+            try {
+                let csvContent = "\uFEFF";
+                csvContent += "Empleado,Periodo,Dias_Unicos,Horas_Totales,Promedio_Horas_Dia\n";
+                
+                analysisResults.forEach(result => {
+                    let employeeName = result.employee;
+                    if (employeeName.includes(',') || employeeName.includes('"') || employeeName.includes('\n')) {
+                        employeeName = '"' + employeeName.replace(/"/g, '""') + '"';
+                    }
+                    
+                    let period = result.period;
+                    if (period.includes(',') || period.includes('"') || period.includes('\n')) {
+                        period = '"' + period.replace(/"/g, '""') + '"';
+                    }
+                    
+                    csvContent += `${employeeName},${period},${result.uniqueDays},${result.totalHours},${result.avgHoursPerDay}\n`;
+                });
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                
+                link.setAttribute('href', url);
+                
+                let fileName = 'analisis_horas_trabajadas';
+                if (currentDateFilter) {
+                    fileName += `_${currentDateFilter.start.toISOString().split('T')[0]}_a_${currentDateFilter.end.toISOString().split('T')[0]}`;
+                }
+                fileName += '.csv';
+                
+                link.setAttribute('download', fileName);
+                link.style.visibility = 'hidden';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showAlert('Archivo CSV exportado correctamente.', 'success');
+                
+            } catch (error) {
+                showAlert('Error al exportar el CSV: ' + error.message, 'error');
+            }
+        }
+
+        // Mostrar alertas
+        function showAlert(message, type) {
+            alertArea.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertArea.innerHTML = '';
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>
