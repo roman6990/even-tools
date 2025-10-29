@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transformador de Texto a Columnas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .input-section, .output-section {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            resize: vertical;
+        }
+        
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 20px 0;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .example {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .example h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .example pre {
+            background-color: #eee;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Transformador de Texto a Columnas</h1>
+        
+        <div class="input-section">
+            <label for="inputText">Texto de entrada (dos columnas separadas por espacios):</label>
+            <textarea id="inputText" placeholder="Pega aquí tu texto con dos columnas separadas por espacios..."></textarea>
+        </div>
+        
+        <button id="processButton">Procesar</button>
+        
+        <div class="output-section">
+            <label for="outputText">Texto transformado:</label>
+            <textarea id="outputText" readonly placeholder="Aquí aparecerá el texto transformado..."></textarea>
+        </div>
+        
+        <div class="example">
+            <h3>Ejemplo:</h3>
+            <p><strong>Entrada:</strong></p>
+            <pre>dato1 dato2
+dato3 dato4
+dato5 dato6</pre>
+            <p><strong>Salida:</strong></p>
+            <pre>dato1 || dato2
+dato3 || dato4
+dato5 || dato6</pre>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('processButton').addEventListener('click', function() {
+            const inputText = document.getElementById('inputText').value;
+            const outputText = transformText(inputText);
+            document.getElementById('outputText').value = outputText;
+        });
+        
+        function transformText(text) {
+            // Dividir el texto en líneas
+            const lines = text.split('\n');
+            
+            // Procesar cada línea
+            const transformedLines = lines.map(line => {
+                // Eliminar espacios en blanco al principio y al final
+                const trimmedLine = line.trim();
+                
+                // Si la línea está vacía, devolver una línea vacía
+                if (!trimmedLine) return '';
+                
+                // Dividir la línea por espacios
+                const parts = trimmedLine.split(/\s+/);
+                
+                // Si hay exactamente dos partes, unirlas con " || "
+                if (parts.length === 2) {
+                    return parts[0] + ' || ' + parts[1];
+                } 
+                // Si hay más de dos partes, unir la primera con el resto
+                else if (parts.length > 2) {
+                    return parts[0] + ' || ' + parts.slice(1).join(' ');
+                }
+                // Si solo hay una parte, devolverla sin cambios
+                else {
+                    return trimmedLine;
+                }
+            });
+            
+            // Unir las líneas transformadas
+            return transformedLines.join('\n');
+        }
+    </script>
+</body>
+</html>
