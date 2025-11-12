@@ -7,7 +7,7 @@
     <style>
         /* Estilos básicos */
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
-        .container { max-width: 700px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        .container { max-width: 700px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); position: relative; }
         h1, h2 { color: #333; }
         h2 { border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 20px; }
         label { display: block; margin-top: 10px; font-weight: bold; }
@@ -40,11 +40,27 @@
             white-space: pre; 
             resize: vertical;
         }
+        /* Estilos para el logo: Posicionado a la derecha */
+        .logo-container {
+            position: absolute;
+            top: 20px; /* Mismo margen superior */
+            right: 20px; /* Camiado de 'left' a 'right' */
+            left: auto; /* Asegurar que no esté afectado por 'left' */
+            z-index: 10;
+        }
+        .logo-container img {
+            max-height: 50px;
+            width: auto;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <div class="logo-container">
+        <img src="https://images.squarespace-cdn.com/content/v1/6581c2f2ed9bfb1cf6328bee/3bb68561-9357-44ea-9c84-34b509a49059/logos_eventelecom_color.png" alt="Logo Eventelecom">
+    </div>
+
     <h1>Generador de Reporte de Ticket</h1>
     
     <form id="ticketForm">
@@ -61,6 +77,10 @@
         
         <label for="tipo_danio">Tipo de daño:</label>
         <input type="text" id="tipo_danio" name="tipo_danio">
+
+        
+<label for="ubicacion_danio">Ubicación de daño:</label>
+        <input type="text" id="ubicacion_danio" name="ubicacion_danio">
 
         <h2>Material Utilizado</h2>
         <label for="calibre_fibra">#Calibre fibra:</label>
@@ -205,11 +225,24 @@
         const inicio = getVal('inicio').split('-').reverse().join('-'); // Formato DD-MM-YYYY
         const ciudad = getVal('ciudad');
         const tipoDanio = getVal('tipo_danio');
+        const ubicacionDanio = getVal('ubicacion_danio'); // Nuevo campo
 
         if (ticketId) reportText += `Ticket: ${ticketId}\n`;
         if (inicio) reportText += `* Inicio: ${inicio}\n`;
         if (ciudad) reportText += `* Ciudad: ${ciudad}\n`;
         
+        // C. Tipo de daño (separado por línea vacía)
+        if (tipoDanio) {
+            reportText += `Tipo de daño: ${tipoDanio}\n`;
+        }
+        // Nuevo campo: Ubicación de daño
+        if (ubicacionDanio) {
+            reportText += `Ubicación de daño: ${ubicacionDanio}\n \n`;
+        } else if (tipoDanio) { // Si hay tipo de daño pero no ubicación, dejar una línea vacía después del tipo de daño
+            reportText += `\n`;
+        }
+
+
         // ==============================================
         // B. Material
         // ==============================================
@@ -228,11 +261,6 @@
             reportText += `Material\n${materialSection}`;
         }
         
-        // C. Tipo de daño (separado por línea vacía)
-        if (tipoDanio) {
-            reportText += `Tipo de daño: ${tipoDanio}\n \n`;
-        }
-
         // ==============================================
         // D. Actividades Realizadas
         // ==============================================

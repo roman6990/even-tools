@@ -12,8 +12,6 @@
             --card-color: #ffffff;
             --text-color: #333333;
             --border-color: #dddddd;
-            --error-color: #e74c3c;
-            --warning-color: #f39c12;
         }
         
         * {
@@ -229,47 +227,6 @@
             background-color: #c0392b;
         }
         
-        .search-filter-bar {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        
-        .search-input {
-            flex: 1;
-            min-width: 200px;
-            padding: 10px 15px;
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        
-        .filter-select {
-            padding: 10px 15px;
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            background: white;
-            font-size: 14px;
-            min-width: 180px;
-        }
-        
-        .clear-filters-btn {
-            background: #95a5a6;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s;
-        }
-        
-        .clear-filters-btn:hover {
-            background: #7f8c8d;
-        }
-        
         .images-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -387,14 +344,21 @@
             word-break: break-all;
         }
         
+        /* CAMBIO: Textarea reemplazado por input de texto */
         .comment-input {
             width: 100%;
             padding: 10px;
             border: 1px solid var(--border-color);
             border-radius: 5px;
             font-size: 14px;
+            height: auto;
+            min-height: auto;
             resize: none;
-            height: 40px;
+            /* Propiedades para permitir selección de texto */
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
         }
         
         .comment-input:focus {
@@ -542,26 +506,6 @@
             border-color: var(--secondary-color);
         }
         
-        .error-message {
-            background-color: rgba(231, 76, 60, 0.1);
-            border: 1px solid var(--error-color);
-            color: var(--error-color);
-            padding: 10px 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-size: 14px;
-        }
-        
-        .batch-info {
-            background-color: rgba(52, 152, 219, 0.1);
-            border: 1px solid #3498db;
-            color: #2980b9;
-            padding: 10px 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-size: 14px;
-        }
-        
         @media (max-width: 768px) {
             .results-header {
                 flex-direction: column;
@@ -601,15 +545,6 @@
                 width: 35px;
                 height: 35px;
                 font-size: 16px;
-            }
-            
-            .search-filter-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .search-input, .filter-select {
-                min-width: 100%;
             }
         }
     </style>
@@ -667,7 +602,6 @@
                 <div class="progress" id="progress"></div>
             </div>
             <div id="fileStats" class="file-stats"></div>
-            <div id="batchInfo" class="batch-info" style="display:none;"></div>
             <div id="debugInfo" class="debug-info"></div>
             
             <button id="processBtn" class="process-btn" disabled>Procesar archivo</button>
@@ -710,14 +644,6 @@
                         Exportar a PDF
                     </button>
                 </div>
-            </div>
-            
-            <div class="search-filter-bar" id="searchFilterBar" style="display:none;">
-                <input type="text" id="searchInput" placeholder="Buscar en comentarios..." class="search-input">
-                <select id="fileFilter" class="filter-select">
-                    <option value="all">Todos los archivos</option>
-                </select>
-                <button id="clearFilters" class="clear-filters-btn">Limpiar filtros</button>
             </div>
             
             <div class="stats" id="statsInfo"></div>
@@ -764,11 +690,6 @@
             const fileStats = document.getElementById('fileStats');
             const debugInfo = document.getElementById('debugInfo');
             const reorderHint = document.getElementById('reorderHint');
-            const searchFilterBar = document.getElementById('searchFilterBar');
-            const searchInput = document.getElementById('searchInput');
-            const fileFilter = document.getElementById('fileFilter');
-            const clearFilters = document.getElementById('clearFilters');
-            const batchInfo = document.getElementById('batchInfo');
             
             let processedData = [];
             let imageFiles = new Map();
@@ -777,27 +698,6 @@
             let dragStartIndex = null;
             let isEditingTitle = false;
             let currentTitle = 'Resultados del procesamiento';
-            let filteredData = [];
-
-            // Patrones mejorados para detección
-            const enhancedPatterns = {
-                dateFormats: [
-                    /\[\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2}:\d{2}\]/, // [DD/MM/AAAA, HH:MM:SS]
-                    /\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2} -/,         // DD/MM/AAAA, HH:MM -
-                    /\d{1,2}\.\d{1,2}\.\d{4}, \d{1,2}:\d{2}/,          // DD.MM.AAAA, HH:MM
-                    /\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2} [a|p]\. m\./, // Formato español completo
-                    /\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2}\s?[ap]m/,     // Formato inglés
-                    /\d{1,2}\/\d{1,2}\/\d{2}, \d{1,2}:\d{2}\s?[ap]m/,     // Formato año corto
-                ],
-                mediaPatterns: [
-                    /<adjunto:\s*(.*?)>/i,                              // <adjunto: nombre>
-                    /(IMG-\d{8}-WA\d{4}\.(jpg|jpeg|png|gif|bmp|webp))/i,
-                    /(VID-\d{8}-WA\d{4}\.(mp4|mov|avi))/i,
-                    /(AUD-\d{8}-WA\d{4}\.(mp3|m4a|opus))/i,
-                    /(PTT-\d{8}-WA\d{4}\.(opus|ogg))/i,
-                    /(STK-\d{8}-WA\d{4}\.(webp|png))/i,
-                ]
-            };
 
             // Manejo de pestañas
             tabs.forEach(tab => {
@@ -818,18 +718,9 @@
             // Manejar la selección de archivo de texto
             textFileInput.addEventListener('change', function() {
                 if (this.files && this.files.length > 0) {
-                    try {
-                        validateFile(this.files[0], 'text');
-                        textFileName.textContent = this.files[0].name;
-                        textFileName.style.color = '#666';
-                    } catch (error) {
-                        textFileName.textContent = error.message;
-                        textFileName.style.color = 'var(--error-color)';
-                        this.value = '';
-                    }
+                    textFileName.textContent = this.files[0].name;
                 } else {
                     textFileName.textContent = 'No se ha seleccionado ningún archivo';
-                    textFileName.style.color = '#666';
                 }
                 updateProcessButtonState();
             });
@@ -837,40 +728,12 @@
             // Manejar la selección de archivo ZIP
             zipFileInput.addEventListener('change', function() {
                 if (this.files && this.files.length > 0) {
-                    try {
-                        validateFile(this.files[0], 'zip');
-                        zipFileName.textContent = this.files[0].name;
-                        zipFileName.style.color = '#666';
-                    } catch (error) {
-                        zipFileName.textContent = error.message;
-                        zipFileName.style.color = 'var(--error-color)';
-                        this.value = '';
-                    }
+                    zipFileName.textContent = this.files[0].name;
                 } else {
                     zipFileName.textContent = 'No se ha seleccionado ningún archivo';
-                    zipFileName.style.color = '#666';
                 }
                 updateProcessButtonState();
             });
-            
-            // Validación de archivos
-            function validateFile(file, type) {
-                const maxSize = type === 'zip' ? 100 * 1024 * 1024 : 10 * 1024 * 1024; // 100MB para ZIP, 10MB para texto
-                const allowedTypes = {
-                    text: ['text/plain', 'application/octet-stream'],
-                    zip: ['application/zip', 'application/x-zip-compressed']
-                };
-
-                if (file.size > maxSize) {
-                    throw new Error(`El archivo es demasiado grande. Tamaño máximo: ${maxSize / 1024 / 1024}MB`);
-                }
-
-                if (!allowedTypes[type].includes(file.type) && !file.name.match(type === 'text' ? /\.txt$/i : /\.zip$/i)) {
-                    throw new Error(`Tipo de archivo no válido. Se esperaba un archivo ${type.toUpperCase()}`);
-                }
-
-                return true;
-            }
             
             // Actualizar estado del botón de procesar
             function updateProcessButtonState() {
@@ -987,8 +850,6 @@
                 imageFiles.clear();
                 processedData = [];
                 debugInfo.style.display = 'none';
-                batchInfo.style.display = 'none';
-                searchFilterBar.style.display = 'none';
                 
                 try {
                     if (currentFileType === 'text') {
@@ -1004,13 +865,10 @@
                     loadingIndicator.style.display = 'none';
                     progressBar.style.display = 'none';
                     resultsSection.style.display = 'block';
-                    
-                    // Mejorar accesibilidad
-                    enhanceAccessibility();
                 } catch (error) {
                     loadingIndicator.style.display = 'none';
                     progressBar.style.display = 'none';
-                    showError('Error al procesar el archivo: ' + error.message);
+                    alert('Error al procesar el archivo: ' + error.message);
                     console.error(error);
                 }
             });
@@ -1049,17 +907,18 @@
                     
                     reader.onload = function(e) {
                         try {
-                            updateProgress('processing', 50, 'Procesando contenido del archivo...');
+                            progress.style.width = '50%';
+                            fileStats.textContent = 'Procesando contenido del archivo...';
                             
                             const fileContent = e.target.result;
                             const results = processWhatsAppFile(fileContent, file.name);
                             
-                            updateProgress('processing', 100, `Procesado: ${file.name} - ${results.length} imágenes encontradas`);
+                            progress.style.width = '100%';
+                            fileStats.textContent = `Procesado: ${file.name} - ${results.length} imágenes encontradas`;
                             
                             resolve(results);
                         } catch (error) {
-                            const errorInfo = handleProcessingError(error, 'processTextFile');
-                            reject(new Error(errorInfo.error));
+                            reject(error);
                         }
                     };
                     
@@ -1074,7 +933,8 @@
             // Procesar archivo ZIP
             async function processZipFile(zipFile) {
                 try {
-                    updateProgress('loading', 10, 'Cargando archivo ZIP...');
+                    progress.style.width = '10%';
+                    fileStats.textContent = 'Cargando archivo ZIP...';
                     
                     const zip = await JSZip.loadAsync(zipFile);
                     const allResults = [];
@@ -1088,7 +948,8 @@
                         }
                     });
                     
-                    updateProgress('loading', 20, `Encontrados ${fileEntries.length} archivos en el ZIP`);
+                    progress.style.width = '20%';
+                    fileStats.textContent = `Encontrados ${fileEntries.length} archivos en el ZIP`;
                     
                     // Primero, extraer todas las imágenes
                     const imagePromises = [];
@@ -1118,84 +979,74 @@
                         }
                     }
                     
-                    updateProgress('extracting', 30, `Extrayendo ${imageCount} imágenes...`);
+                    progress.style.width = '30%';
+                    fileStats.textContent = `Extrayendo ${imageCount} imágenes...`;
                     
                     // Esperar a que se carguen todas las imágenes
                     if (imagePromises.length > 0) {
                         await Promise.all(imagePromises);
                     }
                     
-                    updateProgress('extracting', 40, `${imageCount} imágenes extraídas, buscando archivos de texto...`);
+                    progress.style.width = '40%';
+                    fileStats.textContent = `${imageCount} imágenes extraídas, buscando archivos de texto...`;
                     
-                    // Procesar archivos de texto en lotes para mejor rendimiento
-                    const textFileEntries = fileEntries.filter(fileEntry => {
+                    // Luego procesar TODOS los archivos de texto posibles
+                    const textPromises = [];
+                    let textFileCount = 0;
+                    
+                    for (const fileEntry of fileEntries) {
                         const fileName = fileEntry.path.split('/').pop();
                         const lowerName = fileName.toLowerCase();
                         
-                        return lowerName.endsWith('.txt') || 
-                               lowerName.endsWith('.text') ||
-                               !fileName.includes('.') ||
-                               lowerName.includes('chat') ||
-                               lowerName.includes('whatsapp') ||
-                               lowerName.includes('conversation');
-                    });
+                        // Procesar cualquier archivo que pueda contener texto
+                        if (lowerName.endsWith('.txt') || 
+                            lowerName.endsWith('.text') ||
+                            !fileName.includes('.') || // Archivos sin extensión
+                            lowerName.includes('chat') ||
+                            lowerName.includes('whatsapp') ||
+                            lowerName.includes('conversation')) {
+                            
+                            textFileCount++;
+                            textPromises.push(
+                                fileEntry.entry.async('text').then(content => {
+                                    const results = processWhatsAppFile(content, fileEntry.path);
+                                    return { results, fileName: fileEntry.path };
+                                }).catch(error => {
+                                    console.warn(`No se pudo procesar ${fileEntry.path} como texto:`, error);
+                                    return { results: [], fileName: fileEntry.path };
+                                })
+                            );
+                        }
+                    }
                     
-                    if (textFileEntries.length === 0) {
+                    progress.style.width = '50%';
+                    fileStats.textContent = `Procesando ${textFileCount} archivos de texto...`;
+                    
+                    if (textPromises.length === 0) {
                         throw new Error('No se encontraron archivos de texto procesables en el ZIP.');
                     }
                     
-                    // Procesar en lotes para archivos grandes
-                    const batchSize = 5;
-                    const batches = [];
-                    for (let i = 0; i < textFileEntries.length; i += batchSize) {
-                        batches.push(textFileEntries.slice(i, i + batchSize));
-                    }
+                    const resultsArray = await Promise.all(textPromises);
                     
-                    batchInfo.style.display = 'block';
+                    // Combinar todos los resultados
+                    let totalImages = 0;
+                    resultsArray.forEach(({results, fileName}) => {
+                        if (results.length > 0) {
+                            allResults.push(...results);
+                            totalImages += results.length;
+                            console.log(`Archivo ${fileName}: ${results.length} imágenes encontradas`);
+                        }
+                    });
                     
-                    for (let i = 0; i < batches.length; i++) {
-                        const batch = batches[i];
-                        const batchProgress = ((i / batches.length) * 40) + 40; // De 40% a 80%
-                        
-                        updateProgress('processing', batchProgress, 
-                            `Procesando lote ${i + 1}/${batches.length} (${batch.length} archivos)...`);
-                        
-                        batchInfo.textContent = `Procesando lote ${i + 1} de ${batches.length}: ${batch.map(f => f.path.split('/').pop()).join(', ')}`;
-                        
-                        const batchPromises = batch.map(fileEntry => 
-                            fileEntry.entry.async('text').then(content => {
-                                const results = processWhatsAppFile(content, fileEntry.path);
-                                return { results, fileName: fileEntry.path };
-                            }).catch(error => {
-                                console.warn(`No se pudo procesar ${fileEntry.path} como texto:`, error);
-                                return { results: [], fileName: fileEntry.path };
-                            })
-                        );
-                        
-                        const batchResults = await Promise.all(batchPromises);
-                        
-                        // Combinar resultados del lote
-                        batchResults.forEach(({results, fileName}) => {
-                            if (results.length > 0) {
-                                allResults.push(...results);
-                                console.log(`Archivo ${fileName}: ${results.length} imágenes encontradas`);
-                            }
-                        });
-                        
-                        // Pequeña pausa para no bloquear la UI
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-                    
-                    updateProgress('complete', 100, `Procesados ${textFileEntries.length} archivos - ${allResults.length} imágenes encontradas en total`);
-                    batchInfo.style.display = 'none';
+                    progress.style.width = '100%';
+                    fileStats.textContent = `Procesados ${textFileCount} archivos - ${totalImages} imágenes encontradas en total`;
                     
                     return {
                         data: allResults,
                         images: imageMap
                     };
                 } catch (error) {
-                    const errorInfo = handleProcessingError(error, 'processZipFile');
-                    throw new Error('Error al procesar el archivo ZIP: ' + errorInfo.error);
+                    throw new Error('Error al procesar el archivo ZIP: ' + error.message);
                 }
             }
             
@@ -1203,152 +1054,11 @@
             function processWhatsAppFile(content, fileName = 'desconocido') {
                 console.log(`Procesando archivo: ${fileName}`);
                 
-                // Si el archivo es muy grande, procesar en lotes
-                if (content.length > 1000000) { // 1MB
-                    return processLargeFileInBatches(content, 5000, fileName);
-                }
-                
                 const lines = content.split('\n');
                 const results = [];
                 
-                function isSystemMessage(line) {
-                    const systemKeywords = [
-                        'creó el grupo', 'añadió', 'Mensajes y las llamadas están cifrados',
-                        'Se eliminó este mensaje', 'Se editó este mensaje', 'cambió el asunto',
-                        'cambió la descripción', 'cambió el ícono', 'salió del grupo',
-                        'left the group', 'created the group', 'added', 
-                        'Messages and calls are encrypted', 'cambió tu código de seguridad',
-                        'Los mensajes y las llamadas están cifrados', 'Obtén más información',
-                        'salió de este grupo', 'eliminó a', 'changed the subject',
-                        'changed this group\'s icon', 'changed the description',
-                        'archivo adjunto', 'omitido', 'Security code changed',
-                        'You deleted this message', 'This message was deleted',
-                        'missed voice call', 'missed video call'
-                    ];
-                    
-                    return systemKeywords.some(keyword => 
-                        line.toLowerCase().includes(keyword.toLowerCase())
-                    );
-                }
-                
-                function isDateLine(line) {
-                    return enhancedPatterns.dateFormats.some(pattern => pattern.test(line));
-                }
-                
-                // Procesar cada línea
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (!line) continue;
-                    
-                    // Buscar todos los tipos de medios en la línea
-                    let mediaMatches = [];
-                    enhancedPatterns.mediaPatterns.forEach(pattern => {
-                        const matches = line.match(pattern);
-                        if (matches) {
-                            mediaMatches = mediaMatches.concat(matches.filter(m => m && !m.startsWith('<') && !m.endsWith('>')));
-                        }
-                    });
-                    
-                    if (mediaMatches.length > 0) {
-                        mediaMatches.forEach(mediaName => {
-                            let comment = 'Sin comentarios';
-                            let commentFound = false;
-                            
-                            console.log(`Encontrado medio: ${mediaName} en línea ${i + 1}`);
-                            
-                            // Estrategia 1: Buscar comentario en la misma línea (después del nombre del medio)
-                            const lineAfterMedia = line.split(mediaName)[1]?.trim();
-                            if (lineAfterMedia && !isSystemMessage(lineAfterMedia) && !isDateLine(lineAfterMedia)) {
-                                comment = lineAfterMedia;
-                                commentFound = true;
-                                console.log(`Comentario en misma línea: "${comment}"`);
-                            }
-                            
-                            // Estrategia 2: Buscar en la línea siguiente
-                            if (!commentFound && i < lines.length - 1) {
-                                const nextLine = lines[i + 1].trim();
-                                if (nextLine && !isSystemMessage(nextLine) && !isDateLine(nextLine) && 
-                                    !enhancedPatterns.mediaPatterns.some(p => p.test(nextLine))) {
-                                    comment = nextLine;
-                                    commentFound = true;
-                                    console.log(`Comentario en línea siguiente: "${comment}"`);
-                                }
-                            }
-                            
-                            // Estrategia 3: Buscar en la línea anterior
-                            if (!commentFound && i > 0) {
-                                const prevLine = lines[i - 1].trim();
-                                if (prevLine && !isSystemMessage(prevLine) && !isDateLine(prevLine) && 
-                                    !enhancedPatterns.mediaPatterns.some(p => p.test(prevLine))) {
-                                    comment = prevLine;
-                                    commentFound = true;
-                                    console.log(`Comentario en línea anterior: "${comment}"`);
-                                }
-                            }
-                            
-                            // Limpiar comentario si es un mensaje del sistema o está vacío
-                            if (isSystemMessage(comment) || !comment.trim()) {
-                                comment = 'Sin comentarios';
-                            }
-                            
-                            results.push({
-                                imageName: mediaName,
-                                comment: comment,
-                                sourceFile: fileName,
-                                lineNumber: i + 1
-                            });
-                        });
-                    }
-                }
-                
-                console.log(`Archivo ${fileName}: ${results.length} medios encontrados`);
-                
-                // Mostrar información de debug
-                debugInfo.style.display = 'block';
-                debugInfo.innerHTML = `
-                    <strong>Información de depuración:</strong><br>
-                    Archivo: ${fileName}<br>
-                    Líneas procesadas: ${lines.length}<br>
-                    Medios encontrados: ${results.length}<br>
-                    <small>Ejemplos encontrados:<br>
-                    ${results.slice(0, 5).map(r => `• ${r.imageName} → "${r.comment}" (línea ${r.lineNumber})`).join('<br>')}
-                    </small>
-                `;
-                
-                return results;
-            }
-            
-            // Procesamiento por lotes para archivos grandes
-            function processLargeFileInBatches(content, batchSize = 5000, fileName = 'desconocido') {
-                const lines = content.split('\n');
-                const batches = [];
-                
-                for (let i = 0; i < lines.length; i += batchSize) {
-                    batches.push(lines.slice(i, i + batchSize));
-                }
-                
-                const allResults = [];
-                
-                batchInfo.style.display = 'block';
-                batchInfo.textContent = `Procesando archivo grande en ${batches.length} lotes...`;
-                
-                for (let i = 0; i < batches.length; i++) {
-                    const batchLines = batches[i];
-                    const batchStartLine = i * batchSize;
-                    
-                    // Simular el procesamiento del lote (en una implementación real, esto procesaría el lote)
-                    const batchResults = processBatch(batchLines, batchStartLine, fileName);
-                    allResults.push(...batchResults);
-                    
-                    batchInfo.textContent = `Procesando lote ${i + 1}/${batches.length} (${batchResults.length} medios encontrados)...`;
-                }
-                
-                batchInfo.style.display = 'none';
-                return allResults;
-            }
-            
-            function processBatch(lines, startLine, fileName) {
-                const results = [];
+                // Patrón para detectar nombres de imagen de WhatsApp
+                const imagePattern = /IMG-\d{8}-WA\d{4}\.(jpg|jpeg|png|gif|bmp|webp)/gi;
                 
                 function isSystemMessage(line) {
                     const systemKeywords = [
@@ -1369,15 +1079,22 @@
                 }
                 
                 function isDateLine(line) {
-                    return enhancedPatterns.dateFormats.some(pattern => pattern.test(line));
+                    // Patrones de fecha/hora de WhatsApp
+                    const datePatterns = [
+                        /\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2} [a|p]\. m\./, // Formato español completo
+                        /\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2}\s?[ap]m/,     // Formato inglés
+                        /\d{1,2}\/\d{1,2}\/\d{2}, \d{1,2}:\d{2}\s?[ap]m/,     // Formato año corto
+                    ];
+                    
+                    return datePatterns.some(pattern => pattern.test(line));
                 }
                 
+                // Procesar cada línea
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i].trim();
                     if (!line) continue;
                     
-                    // Buscar imágenes de WhatsApp
-                    const imagePattern = /IMG-\d{8}-WA\d{4}\.(jpg|jpeg|png|gif|bmp|webp)/gi;
+                    // Buscar nombres de imagen en la línea
                     const imageMatches = line.match(imagePattern);
                     
                     if (imageMatches) {
@@ -1385,21 +1102,37 @@
                             let comment = 'Sin comentarios';
                             let commentFound = false;
                             
-                            // Buscar comentario (lógica simplificada para lotes)
+                            console.log(`Encontrada imagen: ${imageName} en línea ${i + 1}`);
+                            
+                            // Estrategia 1: Buscar comentario en la misma línea (después del nombre de la imagen)
                             const lineAfterImage = line.split(imageName)[1]?.trim();
                             if (lineAfterImage && !isSystemMessage(lineAfterImage) && !isDateLine(lineAfterImage)) {
                                 comment = lineAfterImage;
                                 commentFound = true;
+                                console.log(`Comentario en misma línea: "${comment}"`);
                             }
                             
+                            // Estrategia 2: Buscar en la línea siguiente
                             if (!commentFound && i < lines.length - 1) {
                                 const nextLine = lines[i + 1].trim();
                                 if (nextLine && !isSystemMessage(nextLine) && !isDateLine(nextLine) && !nextLine.match(imagePattern)) {
                                     comment = nextLine;
                                     commentFound = true;
+                                    console.log(`Comentario en línea siguiente: "${comment}"`);
                                 }
                             }
                             
+                            // Estrategia 3: Buscar en la línea anterior
+                            if (!commentFound && i > 0) {
+                                const prevLine = lines[i - 1].trim();
+                                if (prevLine && !isSystemMessage(prevLine) && !isDateLine(prevLine) && !prevLine.match(imagePattern)) {
+                                    comment = prevLine;
+                                    commentFound = true;
+                                    console.log(`Comentario en línea anterior: "${comment}"`);
+                                }
+                            }
+                            
+                            // Limpiar comentario si es un mensaje del sistema o está vacío
                             if (isSystemMessage(comment) || !comment.trim()) {
                                 comment = 'Sin comentarios';
                             }
@@ -1408,81 +1141,37 @@
                                 imageName: imageName,
                                 comment: comment,
                                 sourceFile: fileName,
-                                lineNumber: startLine + i + 1
+                                lineNumber: i + 1
                             });
                         });
                     }
                 }
                 
-                return results;
-            }
-            
-            // Manejo de errores mejorado
-            function handleProcessingError(error, context) {
-                console.error(`Error en ${context}:`, error);
+                console.log(`Archivo ${fileName}: ${results.length} imágenes encontradas`);
                 
-                const errorInfo = {
-                    timestamp: new Date().toISOString(),
-                    context: context,
-                    error: error.message,
-                    stack: error.stack
-                };
-                
-                // Guardar en localStorage para debugging
-                try {
-                    const existingErrors = JSON.parse(localStorage.getItem('whatsappProcessorErrors') || '[]');
-                    existingErrors.push(errorInfo);
-                    localStorage.setItem('whatsappProcessorErrors', JSON.stringify(existingErrors.slice(-10))); // Últimos 10 errores
-                } catch (e) {
-                    console.warn('No se pudieron guardar los errores en localStorage:', e);
-                }
-                
-                return errorInfo;
-            }
-            
-            // Actualizar progreso con colores
-            function updateProgress(stage, percentage, message) {
-                progress.style.width = `${percentage}%`;
-                fileStats.textContent = message;
-                
-                // Cambiar color según el progreso
-                if (percentage < 30) {
-                    progress.style.backgroundColor = '#e74c3c'; // Rojo
-                } else if (percentage < 70) {
-                    progress.style.backgroundColor = '#f39c12'; // Naranja
-                } else {
-                    progress.style.backgroundColor = '#25D366'; // Verde WhatsApp
-                }
-            }
-            
-            // Mostrar mensaje de error
-            function showError(message) {
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'error-message';
-                errorDiv.innerHTML = `
-                    <strong>Error:</strong> ${message}
-                    <br><small>Consulta la consola para más detalles.</small>
+                // Mostrar información de debug
+                debugInfo.style.display = 'block';
+                debugInfo.innerHTML = `
+                    <strong>Información de depuración:</strong><br>
+                    Archivo: ${fileName}<br>
+                    Líneas procesadas: ${lines.length}<br>
+                    Imágenes encontradas: ${results.length}<br>
+                    <small>Ejemplos encontrados:<br>
+                    ${results.slice(0, 5).map(r => `• ${r.imageName} → "${r.comment}" (línea ${r.lineNumber})`).join('<br>')}
+                    </small>
                 `;
                 
-                document.querySelector('.upload-section').appendChild(errorDiv);
-                
-                setTimeout(() => {
-                    if (errorDiv.parentNode) {
-                        errorDiv.parentNode.removeChild(errorDiv);
-                    }
-                }, 10000);
+                return results;
             }
             
             // Mostrar resultados en la interfaz
             function displayResults(data) {
                 imagesContainer.innerHTML = '';
-                filteredData = [...data]; // Inicializar datos filtrados
                 
                 if (data.length === 0) {
                     imagesContainer.innerHTML = '<div class="no-results">No se encontraron imágenes en el archivo</div>';
                     statsInfo.textContent = 'No se encontraron imágenes para procesar.';
                     reorderHint.style.display = 'none';
-                    searchFilterBar.style.display = 'none';
                     return;
                 }
                 
@@ -1497,93 +1186,20 @@
                     }
                 });
                 
-                // Actualizar datos procesados
-                processedData = uniqueData;
-                filteredData = [...uniqueData];
-                
-                // Mostrar tarjetas
-                filteredData.forEach((item, index) => {
+                uniqueData.forEach((item, index) => {
                     const imageCard = createImageCard(item, index);
                     imagesContainer.appendChild(imageCard);
                 });
                 
-                // Actualizar estadísticas
                 statsInfo.textContent = `Se encontraron ${uniqueData.length} imágenes únicas en total (de ${data.length} detectadas). Arrastra para reordenar o haz clic en × para eliminar.`;
                 
                 // Mostrar consejo de reordenamiento
                 if (uniqueData.length > 1) {
                     reorderHint.style.display = 'block';
-                } else {
-                    reorderHint.style.display = 'none';
                 }
                 
-                // Mostrar barra de búsqueda y filtros
-                searchFilterBar.style.display = 'flex';
-                setupSearchAndFilter(uniqueData);
-                
-                // Inicializar funcionalidad de arrastre
+                // Inicializar funcionalidad de arrastre SIMPLIFICADA
                 initializeSimpleDragAndDrop();
-            }
-            
-            // Configurar búsqueda y filtros
-            function setupSearchAndFilter(data) {
-                // Limpiar filtro de archivos
-                fileFilter.innerHTML = '<option value="all">Todos los archivos</option>';
-                
-                // Obtener archivos únicos
-                const uniqueFiles = [...new Set(data.map(item => item.sourceFile))];
-                uniqueFiles.forEach(file => {
-                    const option = document.createElement('option');
-                    option.value = file;
-                    option.textContent = file.split('/').pop(); // Mostrar solo el nombre del archivo
-                    fileFilter.appendChild(option);
-                });
-                
-                // Configurar eventos
-                searchInput.addEventListener('input', filterResults);
-                fileFilter.addEventListener('change', filterResults);
-                clearFilters.addEventListener('click', clearAllFilters);
-            }
-            
-            // Filtrar resultados
-            function filterResults() {
-                const searchTerm = searchInput.value.toLowerCase();
-                const selectedFile = fileFilter.value;
-                
-                filteredData = processedData.filter(item => {
-                    const matchesSearch = searchTerm === '' || 
-                                        item.comment.toLowerCase().includes(searchTerm) ||
-                                        item.imageName.toLowerCase().includes(searchTerm);
-                    
-                    const matchesFile = selectedFile === 'all' || item.sourceFile === selectedFile;
-                    
-                    return matchesSearch && matchesFile;
-                });
-                
-                // Actualizar vista
-                imagesContainer.innerHTML = '';
-                
-                if (filteredData.length === 0) {
-                    imagesContainer.innerHTML = '<div class="no-results">No se encontraron resultados para los filtros aplicados</div>';
-                } else {
-                    filteredData.forEach((item, index) => {
-                        const imageCard = createImageCard(item, index);
-                        imagesContainer.appendChild(imageCard);
-                    });
-                    
-                    // Re-inicializar arrastre para los elementos filtrados
-                    initializeSimpleDragAndDrop();
-                }
-                
-                // Actualizar estadísticas
-                statsInfo.textContent = `Mostrando ${filteredData.length} de ${processedData.length} imágenes`;
-            }
-            
-            // Limpiar filtros
-            function clearAllFilters() {
-                searchInput.value = '';
-                fileFilter.value = 'all';
-                filterResults();
             }
             
             // Crear tarjeta de imagen
@@ -1605,16 +1221,9 @@
                 deleteBtn.innerHTML = '×';
                 deleteBtn.title = 'Eliminar imagen';
                 deleteBtn.addEventListener('click', function() {
-                    const cardIndex = filteredData.findIndex(d => d.imageName === item.imageName);
-                    if (cardIndex !== -1) {
-                        // Encontrar el índice en processedData
-                        const originalIndex = processedData.findIndex(d => d.imageName === item.imageName);
-                        if (originalIndex !== -1) {
-                            processedData.splice(originalIndex, 1);
-                        }
-                        filteredData.splice(cardIndex, 1);
-                        displayResults(processedData);
-                    }
+                    const cardIndex = parseInt(imageCard.getAttribute('data-index'));
+                    processedData.splice(cardIndex, 1);
+                    displayResults(processedData);
                 });
                 
                 const imageContainer = document.createElement('div');
@@ -1650,24 +1259,41 @@
                 imageName.textContent = item.imageName;
                 imageName.title = `Archivo origen: ${item.sourceFile} (línea ${item.lineNumber})`;
                 
-                // Cambiar textarea por input de texto
+                // CAMBIO: Textarea reemplazado por input de texto
                 const commentInput = document.createElement('input');
                 commentInput.type = 'text';
                 commentInput.className = 'comment-input';
                 commentInput.placeholder = 'Comentario asociado...';
                 commentInput.value = item.comment;
-                commentInput.id = `comment-${index}`;
+                
+                // Configurar para permitir selección y pegado
+                commentInput.addEventListener('focus', function() {
+                    // Seleccionar todo el texto al enfocar
+                    this.select();
+                });
+                
+                commentInput.addEventListener('click', function() {
+                    // Seleccionar todo el texto al hacer clic
+                    this.select();
+                });
+                
+                // Permitir pegar texto (comportamiento por defecto)
+                commentInput.addEventListener('paste', function(e) {
+                    // El comportamiento por defecto ya permite pegar
+                    // Podemos agregar un pequeño delay para asegurar que se actualice el valor
+                    setTimeout(() => {
+                        item.comment = this.value;
+                    }, 0);
+                });
                 
                 // Guardar el comentario cuando cambie
                 commentInput.addEventListener('change', function() {
                     item.comment = this.value;
                 });
                 
-                // También guardar al presionar Enter
-                commentInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        this.blur(); // Quitar el foco
-                    }
+                // También guardar al soltar una tecla
+                commentInput.addEventListener('keyup', function() {
+                    item.comment = this.value;
                 });
                 
                 imageContainer.appendChild(img);
@@ -1761,22 +1387,10 @@
                     console.log('Soltando en posición:', dragEndIndex, 'desde posición:', dragStartIndex);
                     
                     if (dragStartIndex !== null && dragEndIndex !== null && dragStartIndex !== dragEndIndex) {
-                        // Reordenar los datos filtrados
-                        const itemToMove = filteredData[dragStartIndex];
-                        filteredData.splice(dragStartIndex, 1);
-                        filteredData.splice(dragEndIndex, 0, itemToMove);
-                        
-                        // Actualizar también los datos procesados
-                        const originalItemIndex = processedData.findIndex(item => item.imageName === itemToMove.imageName);
-                        if (originalItemIndex !== -1) {
-                            const originalItem = processedData[originalItemIndex];
-                            processedData.splice(originalItemIndex, 1);
-                            
-                            // Encontrar la nueva posición en processedData basada en el elemento en dragEndIndex
-                            const newIndexItem = filteredData[dragEndIndex];
-                            const newOriginalIndex = processedData.findIndex(item => item.imageName === newIndexItem.imageName);
-                            processedData.splice(newOriginalIndex, 0, originalItem);
-                        }
+                        // Reordenar los datos de manera simple
+                        const itemToMove = processedData[dragStartIndex];
+                        processedData.splice(dragStartIndex, 1);
+                        processedData.splice(dragEndIndex, 0, itemToMove);
                         
                         // Actualizar la vista inmediatamente
                         displayResults(processedData);
@@ -1822,34 +1436,11 @@
                 }, 2000);
             }
             
-            // Mejorar accesibilidad
-            function enhanceAccessibility() {
-                // Botones de exportación
-                exportCsvBtn.setAttribute('aria-label', 'Exportar resultados a formato CSV');
-                exportPdfBtn.setAttribute('aria-label', 'Exportar resultados a formato PDF');
-                
-                // Tarjetas de imagen
-                document.querySelectorAll('.image-card').forEach((card, index) => {
-                    card.setAttribute('aria-label', `Imagen ${index + 1}`);
-                    card.setAttribute('aria-describedby', `comment-${index}`);
-                });
-                
-                // Barra de progreso
-                progressBar.setAttribute('role', 'progressbar');
-                progressBar.setAttribute('aria-valuenow', '0');
-                progressBar.setAttribute('aria-valuemin', '0');
-                progressBar.setAttribute('aria-valuemax', '100');
-                
-                // Campos de búsqueda y filtro
-                searchInput.setAttribute('aria-label', 'Buscar en comentarios');
-                fileFilter.setAttribute('aria-label', 'Filtrar por archivo de origen');
-            }
-            
             // Exportar a CSV
             function exportToCSV(data) {
                 if (data.length === 0) return;
                 
-                let csvContent = "Nombre de imagen,Comentario asociado,Archivo origen,Línea\n";
+                let csvContent = "Nombre de imagen,Comentario asociado,Archivo origen\n";
                 
                 data.forEach(item => {
                     // Escapar comillas y comas en los comentarios
@@ -1857,7 +1448,7 @@
                         ? `"${item.comment.replace(/"/g, '""')}"` 
                         : item.comment;
                     
-                    csvContent += `${item.imageName},${escapedComment},${item.sourceFile},${item.lineNumber}\n`;
+                    csvContent += `${item.imageName},${escapedComment},${item.sourceFile}\n`;
                 });
                 
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1873,15 +1464,12 @@
                 document.body.removeChild(link);
             }
             
-            // Exportar a PDF con plantilla mejorada
+            // Exportar a PDF con imágenes reales (sin nombres de imagen)
             async function exportToPDF(data) {
                 if (data.length === 0) return;
                 
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF();
-                
-                // Crear plantilla profesional
-                const startY = createPDFTemplate(pdf, currentTitle, data);
                 
                 // Configuración para 9 imágenes por página A4 (3x3 grid)
                 const imagesPerPage = 9;
@@ -1892,13 +1480,20 @@
                 
                 // Dimensiones para cada imagen en el PDF
                 const imageWidth = (pageWidth - (2 * margin) - ((imagesPerRow - 1) * 5)) / imagesPerRow;
-                const imageHeight = 60;
-                const textHeight = 20;
+                const imageHeight = 60; // Más espacio para la imagen
+                const textHeight = 20;  // Menos espacio para texto (solo comentario)
                 const totalCardHeight = imageHeight + textHeight;
                 
                 let currentImageIndex = 0;
                 let currentPage = 0;
-                let yPosition = startY;
+                
+                // Agregar título personalizado en la primera página
+                pdf.setFontSize(16);
+                pdf.text(currentTitle, margin, 15);
+                pdf.setFontSize(10);
+                pdf.text(`Generado el: ${new Date().toLocaleDateString()} - Total de imágenes: ${data.length}`, margin, 22);
+                
+                let yStart = 30; // Posición inicial después del título
                 
                 for (let i = 0; i < data.length; i++) {
                     const item = data[i];
@@ -1906,14 +1501,14 @@
                     const col = currentImageIndex % imagesPerRow;
                     
                     const x = margin + (col * (imageWidth + 5));
-                    const y = yPosition + (row * totalCardHeight);
+                    const y = yStart + (row * totalCardHeight);
                     
                     // Verificar si necesitamos una nueva página
                     if (y + totalCardHeight > pageHeight - margin) {
                         pdf.addPage();
                         currentPage++;
                         currentImageIndex = 0;
-                        yPosition = margin;
+                        yStart = margin;
                         
                         // Agregar número de página
                         pdf.setFontSize(10);
@@ -1923,7 +1518,7 @@
                         const newRow = Math.floor(currentImageIndex / imagesPerRow);
                         const newCol = currentImageIndex % imagesPerRow;
                         const newX = margin + (newCol * (imageWidth + 5));
-                        const newY = yPosition + (newRow * totalCardHeight);
+                        const newY = yStart + (newRow * totalCardHeight);
                         
                         await addImageToPDF(pdf, item, newX, newY, imageWidth, imageHeight);
                         currentImageIndex++;
@@ -1935,7 +1530,7 @@
                     // Si hemos alcanzado 9 imágenes en esta página, preparar para la siguiente
                     if (currentImageIndex >= imagesPerPage) {
                         currentImageIndex = 0;
-                        yPosition = margin;
+                        yStart = margin;
                         if (i < data.length - 1) {
                             pdf.addPage();
                             currentPage++;
@@ -1950,31 +1545,7 @@
                 pdf.save('whatsapp_images_report.pdf');
             }
             
-            // Plantilla profesional para PDF
-            function createPDFTemplate(pdf, title, data) {
-                // Cabecera con logo y título
-                pdf.setFillColor(37, 211, 102); // Verde WhatsApp
-                pdf.rect(0, 0, pdf.internal.pageSize.getWidth(), 40, 'F');
-                
-                pdf.setTextColor(255, 255, 255);
-                pdf.setFontSize(20);
-                pdf.text(title, 20, 25);
-                
-                // Información del reporte
-                pdf.setTextColor(0, 0, 0);
-                pdf.setFontSize(10);
-                pdf.text(`Generado: ${new Date().toLocaleString()}`, 20, 45);
-                pdf.text(`Total de imágenes: ${data.length}`, 20, 55);
-                
-                // Línea separadora
-                pdf.setDrawColor(37, 211, 102);
-                pdf.setLineWidth(0.5);
-                pdf.line(20, 60, pdf.internal.pageSize.getWidth() - 20, 60);
-                
-                return 70; // Retornar la posición Y inicial para el contenido
-            }
-            
-            // Función auxiliar para agregar imagen al PDF
+            // Función auxiliar para agregar imagen al PDF (sin mostrar nombres)
             async function addImageToPDF(pdf, item, x, y, width, height) {
                 try {
                     // Verificar si tenemos la imagen real
