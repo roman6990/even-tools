@@ -12,8 +12,8 @@
     <style>
         /* === VARIABLES GLOBALES === */
         :root {
-            --primary-color: #4CAF50;   
-            --secondary-color: #128C7E;
+            --primary-color: #4CAF50;  
+            --secondary-color: #128C7E; 
             --info-color: #2196F3;
             --danger-color: #f44336;
             --border-color: #ddd;
@@ -21,6 +21,7 @@
             --medium-gray: #e0e0e0;
             --dark-gray: #333;
             --shadow: 0 0 10px rgba(0,0,0,0.1);
+            --manual-color: #FF9800; /* Nuevo color para el botón manual */
         }
         
         /* === ESTILOS BASE === */
@@ -68,7 +69,7 @@
         
         .captura-btn-custom { background-color: #9C27B0; color: white; }
 
-        /* === 2. EVIDENCIAS STYLES === */
+        /* === 2. EVIDENCIAS STYLES (Ajustados para el nuevo botón) === */
         .upload-section-evidencias { 
             background-color: white; 
             padding: 25px; 
@@ -78,7 +79,11 @@
         }
         .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
         .file-input-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
-        .file-input-button { display: flex; align-items: center; justify-content: center; gap: 10px; background-color: var(--secondary-color); color: white; padding: 12px 20px; border-radius: 5px; cursor: pointer; text-align: center; font-weight: bold; }
+        .file-input-button { 
+            display: flex; align-items: center; justify-content: center; gap: 10px; 
+            background-color: var(--secondary-color); color: white; padding: 12px 20px; 
+            border-radius: 5px; cursor: pointer; text-align: center; font-weight: bold; 
+        }
         .file-input-button:hover { background-color: #0e6e5e; }
         .file-name { margin-top: 10px; font-style: italic; color: #666; }
         
@@ -101,7 +106,30 @@
         .progress-bar { width: 100%; height: 6px; background-color: #e0e0e0; border-radius: 3px; margin: 10px 0; overflow: hidden; display: none; }
         .progress { height: 100%; background-color: var(--secondary-color); width: 0%; transition: width 0.3s; }
         .file-stats { font-size: 12px; color: #666; margin-top: 5px; }
-
+        
+        /* Estilos del nuevo botón manual */
+        .manual-upload-btn {
+            background-color: var(--manual-color, #FF9800); 
+            color: white; 
+            border: none; 
+            padding: 12px 25px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: bold; 
+            width: 100%; 
+            margin-top: 10px; /* Reducido para encajar con el diseño */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .manual-upload-btn:hover { background-color: #f57c00; }
+        .action-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
 
         /* --- 3. EXPORTAR Y BOTONES GENERALES --- */
         .button-container { text-align: center; margin-top: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
@@ -120,7 +148,7 @@
         
         <div class="header">
             <img src="https://images.squarespace-cdn.com/content/v1/6581c2f2ed9bfb1cf6328bee/3bb68561-9357-44ea-9c84-34b509a49059/logos_eventelecom_color.png" 
-                alt="Logo Even Telecom" class="logo">
+                alt="Logo Even Telecom" class="logo" id="clientLogo">
             <div class="title-container">
                 <h1>Reporte de Evidencias</h1>
                 <input type="text" class="evidencia-input" id="numeroEvidencia" placeholder="Número">
@@ -150,6 +178,7 @@
                                     </select>
                                     <div class="error-message" id="errorTipoActividad">Este campo es obligatorio</div>
                                 </td>
+                                
                                 <td>
                                     <select class="campo-select" id="cliente">
                                         <option value="">Seleccione Cliente</option>
@@ -157,9 +186,11 @@
                                         <option value="MXF">MXF</option>
                                         <option value="NN">NN</option>
                                         <option value="PTI">PTI</option>
+                                        <option value="Otro">Otro (Usar Logo Even)</option>
                                     </select>
                                     <div class="error-message" id="errorCliente">Este campo es obligatorio</div>
                                 </td>
+                                
                                 <td colspan="2">
                                     <input type="text" class="campo-input" id="nombreCliente">
                                     <div class="error-message" id="errorNombreCliente">Este campo es obligatorio</div>
@@ -230,20 +261,34 @@
             <summary>PASO 2: Carga y Reordenamiento de Evidencias (Fotos y Comentarios)</summary>
             <div class="section-content">
                 <section class="upload-section-evidencias">
-                    <h2>Cargar Conversación y Fotos (ZIP)</h2>
-                    <div class="file-input-container">
-                        <div class="file-input-wrapper">
-                            <input type="file" id="zipFileInput" accept=".zip">
-                            <div class="file-input-button">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 15v4a2 0 0 1-2 2H5a2 0 0 1-2-2v-4"></path>
-                                    <polyline points="17 8 12 3 7 8"></polyline>
-                                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                                </svg>
-                                Seleccionar archivo ZIP
+                    <h2>Cargar Evidencias</h2>
+                    <div class="action-group">
+                        <div class="file-input-container">
+                            <div class="file-input-wrapper">
+                                <input type="file" id="zipFileInput" accept=".zip">
+                                <div class="file-input-button">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="17 8 12 3 7 8"></polyline>
+                                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                                    </svg>
+                                    Seleccionar archivo ZIP (Chat y Fotos)
+                                </div>
                             </div>
+                            <div id="zipFileName" class="file-name">No se ha seleccionado ningún archivo</div>
                         </div>
-                        <div id="zipFileName" class="file-name">No se ha seleccionado ningún archivo</div>
+                        
+                        <button id="processBtn" class="process-btn" disabled>Procesar ZIP y Extraer Evidencias</button>
+
+                        <div class="file-input-wrapper">
+                            <input type="file" id="manualImageInput" accept="image/*">
+                            <button type="button" class="manual-upload-btn" id="selectManualImageBtn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M15 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-4.37-4.37a2.42 2.42 0 0 0-3.48 0L9 17"/><path d="m3 21 4-4.5"/>
+                                </svg>
+                                Cargar Imagen Manual (Individual)
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="progress-bar" id="progressBar">
@@ -252,7 +297,6 @@
                     <div id="fileStats" class="file-stats"></div>
                     <div id="debugInfo" style="display:none;" class="debug-info"></div>
                     
-                    <button id="processBtn" class="process-btn" disabled>Procesar ZIP y Extraer Evidencias</button>
                 </section>
                 
                 <div class="loading" id="processingIndicator" style="display: none;">
@@ -269,7 +313,7 @@
                     </div>
                     
                     <div id="imagesContainer" class="images-grid">
-                        </div>
+                    </div>
                 </section>
             </div>
         </details>
@@ -286,7 +330,7 @@
                     Generar y Descargar Reporte PDF Unificado
                 </button>
 
-                <div id="exportStatus" style="margin-top: 20px;">⚠️ **Faltan datos:** Complete los campos obligatorios del Paso 1 y procese el ZIP en el Paso 2.</div>
+                <div id="exportStatus" style="margin-top: 20px;">⚠️ **Faltan datos:** Complete los campos obligatorios del Paso 1 y procese el ZIP en el Paso 2, o cargue imágenes manuales.</div>
             </div>
         </details>
 
@@ -295,13 +339,23 @@
     <script>
         // --- VARIABLES GLOBALES SEPARADAS ---
 
+        // Mapa de logos de clientes (Usando los valores de su HTML original)
+        const CLIENT_LOGOS = {
+            'ATT': 'https://upload.wikimedia.org/wikipedia/commons/3/31/AT%26T_logo_2016.svg',
+            'MXF': 'https://images.crunchbase.com/image/upload/c_pad,f_auto,q_auto:eco,dpr_1/r3xvlbkm8tmonifo7d9c?ik-sanitizeSvg=true',
+            'NN': 'https://static1.squarespace.com/static/6745d89873ac1a238b86d341/t/674a43d3fa1ab8733a2ddd99/1732920275213/logo_neutral_color.png?format=1500w', // Nota: Este es un placeholder de ejemplo
+            'PTI': 'https://www.phoenixintnl.com/hubfs/Images/phoenix-towers-interanational-logo.svg',
+            // Default (Logo Even Telecom)
+            'DEFAULT': 'https://images.squarespace-cdn.com/content/v1/6581c2f2ed9bfb1cf6328bee/3bb68561-9357-44ea-9c84-34b509a49059/logos_eventelecom_color.png' 
+        };
+
         // Datos de la Portada
         let portadaData = {
             numeroEvidencia: '',
             tipoActividad: '',
             cliente: '',
             nombreCliente: '',
-            fechaReporte: new Date().toISOString().substring(0, 10), 
+            fechaReporte: new Date().toISOString().substring(0, 10),
             supervisorEven: '',
             region: '',
             segmento: '',
@@ -311,8 +365,8 @@
 
         // Datos de las Evidencias
         let evidenciasData = {
-            photos: [],      // Array de objetos {imageName, comment} en el orden final
-            imageFiles: new Map() // Mapa para almacenar {nombre: {blob, url}} de las imágenes del ZIP
+            photos: [],      // Array de objetos {imageName, comment, isManual} en el orden final
+            imageFiles: new Map() // Mapa para almacenar {nombre: {blob, url, isManual}} de las imágenes
         };
         
         // Referencias de DOM (Inicializadas en DOMContentLoaded)
@@ -320,16 +374,9 @@
             numeroEvidencia: null, tipoActividad: null, cliente: null, nombreCliente: null, fechaReporte: null,
             supervisorEven: null, region: null, segmento: null, observaciones: null, reportForm: null,
             requiredFields: null, zipFileInput: null, processBtn: null, imagesContainer: null, exportBtn: null,
+            manualImageInput: null,
+            clientLogoImg: null // Referencia para la imagen del logo
         };
-
-        // Mapa de logos de clientes
-        const logoMap = {
-            'ATT': 'https://upload.wikimedia.org/wikipedia/commons/3/31/AT%26T_logo_2016.svg',
-            'NN': 'https://static1.squarespace.com/static/6745d89873ac1a238b86d341/t/674a43d3fa1ab8733a2ddd99/1732920275213/logo_neutral_color.png?format=1500w',
-            'MXF': 'https://images.crunchbase.com/image/upload/c_pad,f_auto,q_auto:eco,dpr_1/r3xvlbkm8tmonifo7d9c?ik-sanitizeSvg=true',
-            'PTI': 'https://www.phoenixintnl.com/hubfs/Images/phoenix-towers-interanational-logo.svg'
-        };
-
 
         // --- FUNCIONES COMUNES / UTILITIES ---
 
@@ -342,6 +389,34 @@
             });
         }
         
+        // Función para cargar imágenes externas o blobs en Base64
+        function getImageBase64(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = function() {
+                    fetch(url)
+                        .then(response => {
+                             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                             return response.blob();
+                        })
+                        .then(blob => blobToBase64(blob))
+                        .then(base64 => resolve(base64))
+                        .catch(() => reject(new Error(`Error al cargar la imagen desde URL: ${url}`)));
+                };
+                img.src = url;
+            });
+        }
+
+
         function updateExportButtonStatus() {
             // Se usa 'false' para que la validación solo revise, pero NO muestre errores visuales
             const isPortadaValid = PortadaLogic.validateForm(false);
@@ -350,7 +425,7 @@
             formReferences.exportBtn.disabled = !(isPortadaValid && hasFotos);
             document.getElementById('exportStatus').innerHTML = (isPortadaValid && hasFotos) 
                 ? "✅ **Listo:** Portada y " + evidenciasData.photos.length + " evidencias cargadas." 
-                : "⚠️ **Faltan datos:** Complete los campos obligatorios del Paso 1 y procese el ZIP en el Paso 2.";
+                : "⚠️ **Faltan datos:** Complete los campos obligatorios del Paso 1 y procese el ZIP en el Paso 2, o cargue imágenes manuales.";
         }
 
         // --- LÓGICA DE LA PORTADA (PortadataLogic) ---
@@ -360,7 +435,7 @@
             initDom: function() {
                 formReferences.numeroEvidencia = document.getElementById('numeroEvidencia');
                 formReferences.tipoActividad = document.getElementById('tipoActividad');
-                formReferences.cliente = document.getElementById('cliente'); 
+                formReferences.cliente = document.getElementById('cliente');
                 formReferences.nombreCliente = document.getElementById('nombreCliente');
                 formReferences.fechaReporte = document.getElementById('fechaReporte');
                 formReferences.supervisorEven = document.getElementById('supervisorEven');
@@ -368,18 +443,22 @@
                 formReferences.segmento = document.getElementById('segmento');
                 formReferences.observaciones = document.getElementById('observaciones');
                 formReferences.reportForm = document.getElementById('reportForm');
+                formReferences.clientLogoImg = document.getElementById('clientLogo'); // Referencia a la imagen
                 
-                // Definir campos obligatorios por ID
+                // Campos obligatorios
                 const fieldIds = ['tipoActividad', 'cliente', 'nombreCliente', 'fechaReporte', 'supervisorEven', 'region', 'segmento', 'observaciones'];
                 formReferences.requiredFields = fieldIds.map(id => document.getElementById(id));
 
                 formReferences.fechaReporte.value = portadaData.fechaReporte;
+                
+                // Inicializar logo al cargar
+                PortadaLogic.updateClientLogo();
             },
 
             saveData: function(manualSave = false) {
                 portadaData.numeroEvidencia = formReferences.numeroEvidencia.value;
                 portadaData.tipoActividad = formReferences.tipoActividad.value;
-                portadaData.cliente = formReferences.cliente.value; 
+                portadaData.cliente = formReferences.cliente.value;
                 portadaData.nombreCliente = formReferences.nombreCliente.value;
                 portadaData.fechaReporte = formReferences.fechaReporte.value;
                 portadaData.supervisorEven = formReferences.supervisorEven.value;
@@ -388,6 +467,21 @@
                 portadaData.observaciones = formReferences.observaciones.value;
                 
                 updateExportButtonStatus();
+            },
+            
+            // FUNCIÓN ACTUALIZADA: Lee el valor del select y cambia la imagen
+            updateClientLogo: function() {
+                const clienteValue = formReferences.cliente.value.toUpperCase().trim();
+                let logoUrl = CLIENT_LOGOS.DEFAULT;
+
+                // Si el cliente seleccionado tiene un logo en el mapa, úsalo
+                if (CLIENT_LOGOS[clienteValue]) {
+                    logoUrl = CLIENT_LOGOS[clienteValue];
+                }
+                
+                if (formReferences.clientLogoImg) {
+                    formReferences.clientLogoImg.src = logoUrl;
+                }
             },
             
             setCapturaImage: function(file) {
@@ -419,8 +513,7 @@
                 let isValid = true;
                 formReferences.requiredFields.forEach(field => {
                     const errorElement = document.getElementById(`error${field.id.charAt(0).toUpperCase() + field.id.slice(1)}`);
-                    // La validación funciona para input y select (campo.value debe tener un valor no vacío)
-                    if (!field.value.trim()) { 
+                    if (!field.value.trim()) {
                         if (showErrors) {
                             field.classList.add('error');
                             if (errorElement) errorElement.style.display = 'block';
@@ -452,6 +545,7 @@
                 formReferences.zipFileInput = document.getElementById('zipFileInput');
                 formReferences.processBtn = document.getElementById('processBtn');
                 formReferences.imagesContainer = document.getElementById('imagesContainer');
+                formReferences.manualImageInput = document.getElementById('manualImageInput');
             },
             
             processWhatsAppFile: function(content, fileName = 'desconocido') {
@@ -510,7 +604,8 @@
                                 imageName: imageName,
                                 comment: comment,
                                 sourceFile: fileName,
-                                lineNumber: i + 1
+                                lineNumber: i + 1,
+                                isManual: false // Marcar como no manual
                             });
                         });
                     }
@@ -529,71 +624,114 @@
                 progressBar.style.display = 'block';
                 progress.style.width = '10%';
                 fileStats.textContent = 'Cargando archivo ZIP...';
-                evidenciasData.imageFiles.clear(); 
-                evidenciasData.photos = [];
-
-                try {
-                    // Carga el archivo ZIP usando JSZip
-                    const zip = await JSZip.loadAsync(zipFile);
-                    const fileEntries = [];
-                    zip.forEach((relativePath, zipEntry) => { if (!zipEntry.dir) { fileEntries.push({ path: relativePath, entry: zipEntry }); } });
-                    
-                    const imagePromises = [];
-                    for (const fileEntry of fileEntries) {
-                        const fileName = fileEntry.path.split('/').pop();
-                        if (fileName.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i)) {
-                            imagePromises.push(fileEntry.entry.async('blob').then(blob => {
-                                const nameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
-                                const imageUrl = URL.createObjectURL(blob);
-
-                                evidenciasData.imageFiles.set(fileName, { blob, url: imageUrl, originalName: fileName });
-                                // Se añade el nombre sin extensión para aumentar las posibilidades de coincidencia con el TXT
-                                evidenciasData.imageFiles.set(nameWithoutExt, { blob, url: imageUrl, originalName: fileName });
-                            }));
-                        }
+                
+                // Limpiar solo los archivos NO manuales antes de procesar un nuevo ZIP
+                evidenciasData.imageFiles.forEach((value, key) => {
+                    if (!value.isManual) {
+                        URL.revokeObjectURL(value.url); // Liberar memoria del blob anterior
+                        evidenciasData.imageFiles.delete(key);
                     }
-                    progress.style.width = '30%';
-                    await Promise.all(imagePromises);
-                    
-                    const textPromises = [];
-                    for (const fileEntry of fileEntries) {
-                        const fileName = fileEntry.path.split('/').pop();
-                        const lowerName = fileName.toLowerCase();
-                        if (lowerName.endsWith('.txt') || lowerName.includes('chat') || lowerName.includes('whatsapp')) {
-                            textPromises.push(fileEntry.entry.async('text').then(content => EvidenciasLogic.processWhatsAppFile(content, fileEntry.path)).catch(() => []));
-                        }
+                });
+                evidenciasData.photos = evidenciasData.photos.filter(photo => photo.isManual);
+
+
+                const zip = await JSZip.loadAsync(zipFile);
+                const fileEntries = [];
+                zip.forEach((relativePath, zipEntry) => { if (!zipEntry.dir) { fileEntries.push({ path: relativePath, entry: zipEntry }); } });
+                
+                const imagePromises = [];
+                for (const fileEntry of fileEntries) {
+                    const fileName = fileEntry.path.split('/').pop();
+                    if (fileName.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i)) {
+                        imagePromises.push(fileEntry.entry.async('blob').then(blob => {
+                            const nameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
+                            const imageUrl = URL.createObjectURL(blob);
+
+                            // Guardar en el mapa de archivos, marcando como no manual
+                            evidenciasData.imageFiles.set(fileName, { blob, url: imageUrl, originalName: fileName, isManual: false });
+                            evidenciasData.imageFiles.set(nameWithoutExt, { blob, url: imageUrl, originalName: fileName, isManual: false });
+                        }));
                     }
-                    progress.style.width = '50%';
-                    const resultsArray = await Promise.all(textPromises);
-                    
-                    const uniqueImages = new Map();
-                    resultsArray.flat().forEach(item => { 
-                        // Comprobación doble: con extensión o sin ella
-                        const imageExists = evidenciasData.imageFiles.has(item.imageName) || evidenciasData.imageFiles.has(item.imageName.replace(/\.[^/.]+$/, ""));
-                        if (imageExists && !uniqueImages.has(item.imageName)) { 
-                            uniqueImages.set(item.imageName, item); 
-                        } 
-                    });
-
-                    evidenciasData.photos = Array.from(uniqueImages.values());
-                    
-                    EvidenciasLogic.displayResults(evidenciasData.photos);
-                    updateExportButtonStatus(); 
-                    
-                    progressBar.style.display = 'none';
-                    processingIndicator.style.display = 'none';
-                    resultsSection.style.display = 'block';
-                    fileStats.textContent = `✅ ¡Listo! ${evidenciasData.photos.length} fotos procesadas y listas para exportar.`;
-
-                } catch (error) {
-                    console.error('Error al procesar el archivo ZIP:', error);
-                    alert(`Error al procesar el archivo ZIP: ${error.message}. Asegúrate de que es un archivo ZIP válido.`);
-                    progressBar.style.display = 'none';
-                    processingIndicator.style.display = 'none';
-                    fileStats.textContent = '❌ ERROR: Falló el procesamiento del ZIP.';
                 }
+                progress.style.width = '30%';
+                await Promise.all(imagePromises);
+                
+                const textPromises = [];
+                for (const fileEntry of fileEntries) {
+                    const fileName = fileEntry.path.split('/').pop();
+                    const lowerName = fileName.toLowerCase();
+                    if (lowerName.endsWith('.txt') || lowerName.includes('chat') || lowerName.includes('whatsapp')) {
+                        textPromises.push(fileEntry.entry.async('text').then(content => EvidenciasLogic.processWhatsAppFile(content, fileEntry.path)).catch(() => []));
+                    }
+                }
+                progress.style.width = '50%';
+                const resultsArray = await Promise.all(textPromises);
+                
+                const uniqueImages = new Map();
+                
+                // Recolectar imágenes del ZIP y texto asociado (evitando duplicados en el chat)
+                resultsArray.flat().forEach(item => { 
+                    const imageExists = evidenciasData.imageFiles.has(item.imageName) || evidenciasData.imageFiles.has(item.imageName.replace(/\.[^/.]+$/, ""));
+                    if (imageExists && !uniqueImages.has(item.imageName)) { 
+                        uniqueImages.set(item.imageName, item); 
+                    } 
+                });
+
+                // Combinar fotos manuales existentes con las nuevas fotos del ZIP
+                const newPhotos = Array.from(uniqueImages.values());
+                evidenciasData.photos = [...evidenciasData.photos, ...newPhotos];
+                
+                EvidenciasLogic.displayResults(evidenciasData.photos);
+                updateExportButtonStatus(); 
+                
+                progressBar.style.display = 'none';
+                processingIndicator.style.display = 'none';
+                resultsSection.style.display = 'block';
+                fileStats.textContent = `✅ ¡Listo! ${evidenciasData.photos.length} fotos totales (incl. manuales) y listas para exportar.`;
             },
             
+            // NUEVA FUNCIÓN: Procesa la carga manual de una imagen
+            processManualImage: function(file) {
+                if (!file || !file.type.startsWith('image/')) {
+                    alert('Por favor, seleccione un archivo de imagen válido.');
+                    return;
+                }
+                
+                // Usar un nombre único para el mapa
+                const baseName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9]/g, '_');
+                let uniqueName = baseName + '_' + Date.now();
+                let originalFileName = file.name;
+
+                const imageUrl = URL.createObjectURL(file);
+                
+                // Almacenar el archivo
+                evidenciasData.imageFiles.set(uniqueName, { 
+                    blob: file, 
+                    url: imageUrl, 
+                    originalName: originalFileName, 
+                    isManual: true 
+                });
+
+                // Crear el objeto de la foto
+                const newPhoto = {
+                    imageName: uniqueName, // Usamos el nombre único como clave
+                    comment: `[Carga Manual] ${originalFileName}`,
+                    sourceFile: 'Carga Manual',
+                    isManual: true
+                };
+
+                // Añadir al array de fotos y re-renderizar
+                evidenciasData.photos.push(newPhoto);
+                
+                // Asegurar que la sección de resultados esté visible
+                document.getElementById('resultsSection').style.display = 'block';
+
+                EvidenciasLogic.displayResults(evidenciasData.photos);
+                updateExportButtonStatus();
+
+                document.getElementById('fileStats').textContent = `✅ Imagen manual "${originalFileName}" agregada. Total: ${evidenciasData.photos.length} fotos.`;
+            },
+
             displayResults: function(data) {
                 formReferences.imagesContainer.innerHTML = '';
                 const statsInfo = document.getElementById('statsInfo');
@@ -619,7 +757,7 @@
             createImageCard: function(item, index) {
                 const imageCard = document.createElement('div');
                 imageCard.className = 'image-card';
-                imageCard.setAttribute('data-index', index);
+                imageCard.setAttribute('data-index', index); // Índice basado en el orden actual del array
                 imageCard.draggable = true;
 
                 const deleteBtn = document.createElement('button');
@@ -628,8 +766,19 @@
                 deleteBtn.title = 'Eliminar imagen';
                 deleteBtn.addEventListener('click', function() {
                     const targetIndex = parseInt(imageCard.getAttribute('data-index'));
+                    
+                    // Si es una foto manual, también limpiar el URL blob
+                    const deletedItem = evidenciasData.photos[targetIndex];
+                    if (deletedItem.isManual) {
+                        const imageData = evidenciasData.imageFiles.get(deletedItem.imageName);
+                        if (imageData && imageData.url) {
+                            URL.revokeObjectURL(imageData.url);
+                        }
+                        evidenciasData.imageFiles.delete(deletedItem.imageName);
+                    }
+                    
                     evidenciasData.photos.splice(targetIndex, 1);
-                    EvidenciasLogic.displayResults(evidenciasData.photos); 
+                    EvidenciasLogic.displayResults(evidenciasData.photos); // Re-renderizar después de eliminar
                     updateExportButtonStatus();
                 });
                 
@@ -642,7 +791,9 @@
                 const img = document.createElement('img');
                 img.alt = item.imageName;
                 
+                // Obtener datos usando el imageName (que puede ser el nombre original o el nombre único manual)
                 let imageData = evidenciasData.imageFiles.get(item.imageName) || evidenciasData.imageFiles.get(item.imageName.replace(/\.[^/.]+$/, ""));
+                
                 img.src = (imageData && imageData.url) ? imageData.url : 'data:image/svg+xml;base64,...'; 
                 imageContainer.appendChild(img);
 
@@ -651,7 +802,8 @@
                 
                 const imageName = document.createElement('div');
                 imageName.className = 'image-name';
-                imageName.textContent = item.imageName;
+                // Mostrar el nombre original para las manuales si está disponible
+                imageName.textContent = imageData?.originalName || item.imageName; 
                 imageInfo.appendChild(imageName);
 
                 const commentInput = document.createElement('textarea');
@@ -664,27 +816,11 @@
                     updateExportButtonStatus(); 
                 });
                 
-                // === CÓDIGO DE CORRECCIÓN PARA PERMITIR COPIAR/PEGAR ===
-                
-                // Deshabilitar el arrastre del padre cuando se está editando el texto.
-                commentInput.addEventListener('focus', function() {
-                    imageCard.draggable = false;
-                });
-
-                commentInput.addEventListener('blur', function() {
-                    imageCard.draggable = true;
-                });
-
-                // Evita que un clic o arrastre dentro del textarea inicie el dragstart del padre.
-                commentInput.addEventListener('mousedown', function(e) {
-                    e.stopPropagation(); 
-                });
-                
-                // Evita que un evento clave como Ctrl+C/V active eventos de teclado a nivel de tarjeta.
-                commentInput.addEventListener('keydown', function(e) {
-                    e.stopPropagation(); 
-                });
-                // === FIN DE CORRECCIÓN ===
+                // Corrección UX para permitir escribir/copiar/pegar sin iniciar el arrastre
+                commentInput.addEventListener('focus', function() { imageCard.draggable = false; });
+                commentInput.addEventListener('blur', function() { imageCard.draggable = true; });
+                commentInput.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+                commentInput.addEventListener('keydown', function(e) { e.stopPropagation(); });
 
                 imageInfo.appendChild(commentInput);
                 
@@ -701,6 +837,8 @@
                 let dragStartIndex = null;
 
                 cards.forEach(card => {
+                    
+                    // Limpiar listeners previos si existen (importante para el re-renderizado)
                     const oldDragStartHandler = card.dragStartHandler || function(){};
                     const oldDragEndHandler = card.dragEndHandler || function(){};
                     const oldDragOverHandler = card.dragOverHandler || function(){};
@@ -716,7 +854,6 @@
                     card.removeEventListener('drop', oldDropHandler);
 
                     card.dragStartHandler = function(e) {
-                        // Asegurar que el arrastre solo ocurre si draggable es true.
                         if (this.draggable === true) { 
                             draggedItem = this;
                             dragStartIndex = parseInt(this.getAttribute('data-index'));
@@ -747,6 +884,7 @@
                                 evidenciasData.photos.splice(dragStartIndex, 1);
                                 evidenciasData.photos.splice(dragEndIndex, 0, itemToMove);
                                 
+                                // Re-renderizar la cuadrícula para actualizar los índices DOM y eventos.
                                 EvidenciasLogic.displayResults(evidenciasData.photos);
                                 updateExportButtonStatus();
                                 document.querySelector('#exportStatus').innerHTML = '✓ Orden de imagen actualizado. Listo para exportar.';
@@ -764,40 +902,11 @@
             }
         };
 
-        // --- LÓGICA DE EXPORTACIÓN UNIFICADA (SOLO SE EJECUTA AL FINAL) ---
-        
-        function getImageBase64(url) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.crossOrigin = 'Anonymous';
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    // Usamos image/png para mantener la transparencia
-                    resolve(canvas.toDataURL('image/png'));
-                };
-                img.onerror = function() {
-                    // Intenta cargar la imagen a través de fetch si hay error de CORS/Security
-                    fetch(url)
-                        .then(response => {
-                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                            return response.blob();
-                        })
-                        .then(blob => blobToBase64(blob))
-                        .then(base64 => resolve(base64))
-                        .catch(() => reject(new Error(`Error al cargar la imagen desde URL: ${url}`)));
-                };
-                img.src = url;
-            });
-        }
-
+        // --- LÓGICA DE EXPORTACIÓN UNIFICADA ---
 
         const ExportLogic = {
 
-            generateCoverPage: async function(doc, formValues, logoBase64) {
+            generateCoverPage: async function(doc, formValues, evenLogoBase64) {
                 const margin = 10;
                 let yPosition = margin;
                 const pageWidth = doc.internal.pageSize.width;
@@ -807,96 +916,80 @@
 
                 const COLOR_LIGHT_GRAY = [240, 240, 240]; 
                 const COLOR_DARK_GRAY = [51, 51, 51];
-                
-                // Dimensiones del logo unificadas: 45 x 15 mm
                 const LOGO_WIDTH = 45;
                 const LOGO_HEIGHT = 15;
 
                 // --- 1. ENCABEZADO Y LOGOS --- 
                 
                 // Logo de Even Telecom (Izquierda)
-                if (logoBase64) { 
-                    doc.addImage(logoBase64, 'PNG', margin, yPosition, LOGO_WIDTH, LOGO_HEIGHT); 
+                if (evenLogoBase64) { 
+                    doc.addImage(evenLogoBase64, 'PNG', margin, yPosition, LOGO_WIDTH, LOGO_HEIGHT); 
                 } 
                 
                 // Logo del Cliente (Derecha)
                 const cliente = getVal('cliente');
-                const clienteLogoUrl = logoMap[cliente];
+                const clienteLogoUrl = CLIENT_LOGOS[cliente] || null;
+                let finalClienteLogoBase64 = null;
                 
-                if (clienteLogoUrl) {
+                if (clienteLogoUrl && cliente !== 'OTRO') {
                     try {
                         // Obtener Base64 del logo del cliente
-                        const clienteLogoBase64 = await getImageBase64(clienteLogoUrl);
-                        
-                        // Posición del logo del cliente (esquina superior derecha)
+                        finalClienteLogoBase64 = await getImageBase64(clienteLogoUrl);
                         const xCliente = pageWidth - margin - LOGO_WIDTH;
-                        doc.addImage(clienteLogoBase64, 'PNG', xCliente, yPosition, LOGO_WIDTH, LOGO_HEIGHT); 
+                        doc.addImage(finalClienteLogoBase64, 'PNG', xCliente, yPosition, LOGO_WIDTH, LOGO_HEIGHT);
                     } catch (e) {
                         console.error(`Error al cargar logo de ${cliente}:`, e);
-                        // Si falla, se ignora y el espacio queda vacío.
                     }
                 }
-
+                
                 // TÍTULO PRINCIPAL (Centrado)
                 doc.setFontSize(14); 
                 doc.setFont('helvetica', 'bold');
                 doc.setTextColor(COLOR_DARK_GRAY[0], COLOR_DARK_GRAY[1], COLOR_DARK_GRAY[2]);
 
-                yPosition += LOGO_HEIGHT; // Posicionamiento después del área de logos
+                yPosition += LOGO_HEIGHT; 
                 doc.text('REPORTE DE EVIDENCIAS', pageCenter, yPosition, { align: 'center' });
 
-                // TICKET NÚMERO (Centrado y con el mismo estilo H1)
+                // TICKET NÚMERO
                 if (formValues.numeroEvidencia) {
-                    yPosition += 5; // Un pequeño espacio vertical
-                    doc.setFontSize(14); // Mismo tamaño H1
-                    doc.setFont('helvetica', 'bold'); // Misma negrita H1
+                    yPosition += 5; 
+                    doc.setFontSize(14); 
+                    doc.setFont('helvetica', 'bold'); 
                     doc.text(`N°: ${getVal('numeroEvidencia')}`, pageCenter, yPosition, { align: 'center' });
                 }
 
-                yPosition += 15; // Dejar espacio para el siguiente contenido
+                yPosition += 15; // Espacio antes de la tabla
 
+                // 2. DATOS DE LA TABLA... (Resto de la lógica es la misma)
 
-                // 2. ESTILOS Y DATOS DE LA TABLA
-                
                 const bodyCellStyle = { fontSize: 7, cellPadding: 3, minCellHeight: 8, textColor: COLOR_DARK_GRAY };
                 const headerCellStyle = { fillColor: COLOR_LIGHT_GRAY, textColor: COLOR_DARK_GRAY, fontStyle: 'bold', fontSize: 7, cellPadding: 3, minCellHeight: 8 };
                 
                 const tipoActividadTexto = formValues.tipoActividad === 'mantenimiento-correctivo' ? 'Mantenimiento Correctivo' : formValues.tipoActividad === 'mantenimiento-preventivo' ? 'Mantenimiento Preventivo' : '-';
+                const fechaFormateada = getVal('fechaReporte'); // Usa el valor de la fecha tal cual
                 
-                // Se usa el valor de la fecha tal cual (YYYY-MM-DD)
-                const fechaFormateada = getVal('fechaReporte'); 
-                
-                // Estructura de la Tabla (4 celdas lógicas)
                 const tableData = [
-                    // Fila 0: Encabezados de Columna (4 celdas visuales)
                     [{ content: 'TIPO DE ACTIVIDAD', styles: headerCellStyle },
                      { content: 'CLIENTE', styles: headerCellStyle },
                      { content: 'NOMBRE CLIENTE', colSpan: 1, styles: headerCellStyle }, 
                      { content: 'Fecha de reporte', styles: headerCellStyle } 
                     ],
-                    // Fila 1: Datos de la primera fila (4 celdas visuales)
                     [tipoActividadTexto, 
                      getVal('cliente'), 
                      { content: getVal('nombreCliente'), colSpan: 1, styles: bodyCellStyle }, 
-                     fechaFormateada // Usa el valor sin formatear
+                     fechaFormateada
                     ],
-                    // Fila 2: Encabezados de Fila (Supervisor/Región) (4 celdas visuales)
                     [{ content: 'SUPERVISOR EVEN', styles: headerCellStyle }, 
                      getVal('supervisorEven'), 
                      { content: 'REGION', colSpan: 1, styles: headerCellStyle }, 
                      getVal('region')
                     ],
-                    // Fila 3: Segmento (Encabezado)
                     [{ content: 'SEGMENTO', colSpan: 4, styles: headerCellStyle }], 
-                    // Fila 4: Segmento (Datos)
                     [{ content: getVal('segmento'), colSpan: 4, styles: bodyCellStyle }], 
-                    // Fila 5: Observaciones (Encabezado)
                     [{ content: 'OBSERVACIONES', colSpan: 4, styles: headerCellStyle }], 
-                    // Fila 6: Observaciones (Datos)
                     [{ content: getVal('observaciones'), colSpan: 4, styles: { ...bodyCellStyle, minCellHeight: 12 } }] 
                 ];
                 
-                // Redefinimos los anchos de columna para 4 columnas, manteniendo la proporción visual:
                 doc.autoTable({ 
                     startY: yPosition, 
                     body: tableData, 
@@ -907,7 +1000,7 @@
                         0: { cellWidth: 45 },   
                         1: { cellWidth: 35 },   
                         2: { cellWidth: 60 },   
-                        3: { cellWidth: 40 }     
+                        3: { cellWidth: 40 }    
                     } ,
                     headStyles: {
                         fillColor: COLOR_LIGHT_GRAY,
@@ -936,57 +1029,57 @@
                 // Pie de página de la portada
                 doc.setFontSize(6); doc.setFont('helvetica', 'italic');
                 doc.text(`Generado: ${new Date().toLocaleDateString('es-ES')}`, margin, doc.internal.pageSize.height - 5);
+                
+                // Devuelve el logo de Even para las páginas de evidencia (es la única constante que siempre existe)
+                return evenLogoBase64;
             },
             
             // Función auxiliar para agregar el encabezado a las páginas de evidencias
-            addHeaderToEvidencePage: async function(pdf, formValues, logoBase64) {
+            addHeaderToEvidencePage: async function(pdf, formValues, evenLogoBase64) {
                 const margin = 10;
                 let yPosition = margin;
                 const pageWidth = pdf.internal.pageSize.width;
                 const pageCenter = pageWidth / 2;
                 const getVal = (key) => String(formValues[key] || '-');
                 const COLOR_DARK_GRAY = [51, 51, 51];
-                
-                // Dimensiones del logo unificadas: 45 x 15 mm
                 const LOGO_WIDTH = 45;
                 const LOGO_HEIGHT = 15;
 
                 // 1. Logo Even (Izquierda)
-                if (logoBase64) { 
-                    pdf.addImage(logoBase64, 'PNG', margin, yPosition, LOGO_WIDTH, LOGO_HEIGHT); 
+                if (evenLogoBase64) { 
+                    pdf.addImage(evenLogoBase64, 'PNG', margin, yPosition, LOGO_WIDTH, LOGO_HEIGHT); 
                 } 
                 
-                // 2. Logo Cliente (Derecha)
+                // 2. Logo Cliente (Derecha - se recalcula en cada llamada)
                 const cliente = getVal('cliente');
-                const clienteLogoUrl = logoMap[cliente];
+                const clienteLogoUrl = CLIENT_LOGOS[cliente] || null;
 
-                if (clienteLogoUrl) {
+                if (clienteLogoUrl && cliente !== 'OTRO') {
                     try {
                         const clienteLogoBase64 = await getImageBase64(clienteLogoUrl);
                         const xCliente = pageWidth - margin - LOGO_WIDTH;
-                        pdf.addImage(clienteLogoBase64, 'PNG', xCliente, yPosition, LOGO_WIDTH, LOGO_HEIGHT); 
+                        pdf.addImage(clienteLogoBase64, 'PNG', xCliente, yPosition, LOGO_WIDTH, LOGO_HEIGHT);
                     } catch (e) {
-                        console.error(`Error al cargar logo de ${cliente} en la página de evidencia:`, e);
+                         // Fallo silencioso del logo del cliente en el encabezado
                     }
                 }
                 
-                // 3. Título (REPORTE DE EVIDENCIAS)
-                pdf.setFontSize(12); // Un poco más pequeño que la portada (14)
+                // 3. Título y Ticket
+                pdf.setFontSize(12);
                 pdf.setFont('helvetica', 'bold');
                 pdf.setTextColor(COLOR_DARK_GRAY[0], COLOR_DARK_GRAY[1], COLOR_DARK_GRAY[2]);
-                yPosition += LOGO_HEIGHT; // Posicionamiento después del área de logos
+                yPosition += LOGO_HEIGHT; 
                 
                 pdf.text('REPORTE DE EVIDENCIAS', pageCenter, yPosition, { align: 'center' });
 
-                // 4. Número de Ticket
                 if (formValues.numeroEvidencia) {
-                    yPosition += 4; // Pequeño espacio
-                    pdf.setFontSize(10); // Más pequeño que el título
+                    yPosition += 4; 
+                    pdf.setFontSize(10); 
                     pdf.setFont('helvetica', 'normal');
                     pdf.text(`N°: ${getVal('numeroEvidencia')}`, pageCenter, yPosition, { align: 'center' });
                 }
                 
-                // Dibujar línea divisoria para separar el encabezado del contenido
+                // Dibujar línea divisoria
                 yPosition += 5;
                 pdf.setLineWidth(0.5);
                 pdf.setDrawColor(200, 200, 200);
@@ -1015,14 +1108,14 @@
                 let currentImageIndex = 0;
                 
                 pdf.addPage();
-                let currentY = await ExportLogic.addHeaderToEvidencePage(pdf, formValues, logoBase64); // Añadir encabezado a la primera página de evidencias
+                let currentY = await ExportLogic.addHeaderToEvidencePage(pdf, formValues, logoBase64); 
                 
                 for (let i = 0; i < data.length; i++) {
                     const item = data[i];
                     
                     if (currentImageIndex > 0 && currentImageIndex % imagesPerPage === 0) {
                         pdf.addPage();
-                        currentY = await ExportLogic.addHeaderToEvidencePage(pdf, formValues, logoBase64); // Añadir encabezado a la página nueva
+                        currentY = await ExportLogic.addHeaderToEvidencePage(pdf, formValues, logoBase64);
                         currentImageIndex = 0;
                     }
                     
@@ -1030,7 +1123,6 @@
                     let col = currentImageIndex % imagesPerRow;
                     
                     let x = margin + (col * (imageWidth + spacing));
-                    // Usamos currentY como base, no el margen superior fijo
                     let y = currentY + (row * totalCardHeight);
                     
                     await ExportLogic.renderImageAndComment(pdf, item, x, y, imageWidth, imageHeight);
@@ -1045,6 +1137,7 @@
             },
             
             renderImageAndComment: async function(pdf, item, x, y, width, height) {
+                 // Buscar por el nombre completo si no es manual, o por el nombre único si es manual
                  let imageData = evidenciasData.imageFiles.get(item.imageName) || evidenciasData.imageFiles.get(item.imageName.replace(/\.[^/.]+$/, ""));
                  let base64 = null;
                  
@@ -1053,7 +1146,7 @@
                  }
 
                  if (base64) {
-                     // Nota: 'JPEG' se usa como un formato compatible general, pero 'PNG' es a menudo preferido para fondos transparentes si aplica
+                     // Usamos 'JPEG' (o 'PNG' si se necesita transparencia)
                      pdf.addImage(base64, 'JPEG', x, y, width, height); 
                  } else {
                      pdf.setDrawColor(200, 200, 200);
@@ -1065,7 +1158,7 @@
                  pdf.setFontSize(7); 
                  pdf.setFont('helvetica', 'normal');
                  
-                 let commentText = item.comment && item.comment !== 'Sin comentarios' ? item.comment : `Archivo: ${item.imageName}`;
+                 let commentText = item.comment && item.comment !== 'Sin comentarios' ? item.comment : `Archivo: ${imageData?.originalName || item.imageName}`;
                  const commentLines = pdf.splitTextToSize(commentText, width - 2); 
                  pdf.text(commentLines, x + 1, y + height + 4); 
             },
@@ -1082,7 +1175,7 @@
                 if (evidenciasData.photos.length === 0) {
                      alert("ERROR: No hay fotos procesadas. Vaya al Paso 2.");
                      document.getElementById('detailsStep2').open = true;
-                    return;
+                     return;
                 }
 
                 const { jsPDF } = window.jspdf;
@@ -1093,8 +1186,8 @@
                 try {
                     const doc = new jsPDF(); 
                     
-                    // Carga el logo principal (Even Telecom) una sola vez
-                    const logoBase64 = await getImageBase64('https://images.squarespace-cdn.com/content/v1/6581c2f2ed9bfb1cf6328bee/3bb68561-9357-44ea-9c84-34b509a49059/logos_eventelecom_color.png');
+                    // Cargar el logo principal (Even Telecom)
+                    const evenLogoBase64 = await getImageBase64(CLIENT_LOGOS.DEFAULT);
                     
                     const formValues = {
                         numeroEvidencia: formReferences.numeroEvidencia.value,
@@ -1109,9 +1202,11 @@
                     };
 
 
-                    await ExportLogic.generateCoverPage(doc, formValues, logoBase64);
-                    // addImagesPages ahora es asíncrono y se encarga de cargar el logo del cliente en cada página de evidencia.
-                    await ExportLogic.addImagesPages(doc, formValues, logoBase64); 
+                    // Generar la portada y obtener la Base64 del logo de Even para el encabezado
+                    await ExportLogic.generateCoverPage(doc, formValues, evenLogoBase64);
+                    
+                    // Generar las páginas de evidencia
+                    await ExportLogic.addImagesPages(doc, formValues, evenLogoBase64); 
 
                     const filename = formValues.numeroEvidencia ? 
                         `Reporte_${formValues.numeroEvidencia}_Completo.pdf` : 'Reporte_Completo.pdf';
@@ -1120,7 +1215,7 @@
                     
                 } catch (error) {
                     console.error('Error fatal al generar el PDF unificado:', error);
-                    alert(`Error fatal al generar el PDF: ${error.message}.`);
+                    alert(`Error fatal al generar el PDF: ${error.message}. Consulte la consola para más detalles.`);
                 } finally {
                     document.getElementById('loadingIndicatorExport').style.display = 'none';
                     formReferences.exportBtn.disabled = false;
@@ -1134,8 +1229,8 @@
             PortadaLogic.initDom();
             EvidenciasLogic.initDom();
             formReferences.exportBtn = document.getElementById('exportBtn'); 
+            formReferences.manualImageInput = document.getElementById('manualImageInput'); // Asegurar la referencia
 
-            // Se asegura que la preview de la captura de portada esté oculta al inicio
             document.getElementById('capturaPreview').style.display = 'none';
 
             // === Eventos de la Portada (Paso 1) ===
@@ -1145,6 +1240,14 @@
                 if (e.target.files.length) PortadaLogic.setCapturaImage(e.target.files[0]);
             });
 
+            // Listener para el logo y guardar datos (escucha el evento 'change' del select)
+            formReferences.cliente.addEventListener('change', function() {
+                PortadaLogic.saveData();
+                PortadaLogic.updateClientLogo(); 
+            });
+            // También se agrega un listener al select 'tipoActividad' 
+            formReferences.tipoActividad.addEventListener('change', PortadaLogic.saveData);
+            
             // Arrastrar y Pegar para la imagen de Portada
             const uploadArea = document.getElementById('uploadArea');
             uploadArea.addEventListener('drop', (e) => { e.preventDefault(); e.currentTarget.classList.remove('drag-over'); if (e.dataTransfer.files.length) PortadaLogic.setCapturaImage(e.dataTransfer.files[0]); });
@@ -1153,7 +1256,6 @@
             
             // Gestión de Pegado (Ctrl+V)
             document.addEventListener('paste', function(e) {
-                // Solo ejecutar si el foco no está en un campo de texto y el área de carga está visible
                 const activeElement = document.activeElement;
                 const isFormActive = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT');
                 const isUploadVisible = document.getElementById('uploadArea').style.display !== 'none';
@@ -1183,6 +1285,7 @@
                     PortadaLogic.deleteCapturaImage();
                     PortadaLogic.clearValidationErrors();
                     updateExportButtonStatus();
+                    PortadaLogic.updateClientLogo(); // Restablecer logo
                 }, 0);
             });
             
@@ -1211,11 +1314,23 @@
                 }
                 this.disabled = false;
             });
+
+            // === NUEVOS EVENTOS DE CARGA MANUAL ===
+            document.getElementById('selectManualImageBtn').addEventListener('click', function() {
+                formReferences.manualImageInput.click();
+            });
+
+            formReferences.manualImageInput.addEventListener('change', function(e) {
+                if (this.files.length) {
+                    EvidenciasLogic.processManualImage(this.files[0]);
+                    this.value = ''; // Limpiar el input para permitir cargar el mismo archivo de nuevo
+                }
+            });
             
             // === Eventos de Exportar (Paso 3) ===
             formReferences.exportBtn.addEventListener('click', ExportLogic.exportFullReportToPDF);
             
-            // Llamada inicial para establecer el estado del botón y la fecha por defecto
+            // Llamada inicial para establecer el estado del botón
             updateExportButtonStatus();
         });
     </script>
