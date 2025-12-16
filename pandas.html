@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transformador de Texto a Columnas</title>
     <style>
+        /* ESTILOS ORIGINALES SIN MODIFICACIONES */
         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
@@ -84,6 +85,21 @@
             border-radius: 4px;
             overflow-x: auto;
         }
+
+        /* NUEVOS ESTILOS PARA EL MENSAJE DE COPIADO - ESTO ES INEVITABLE PARA QUE SE MUESTRE CORRECTAMENTE */
+        #copyMessage {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
@@ -96,6 +112,9 @@
         </div>
         
         <button id="processButton">Procesar</button>
+        
+        <button id="copyButton">📋 Copiar Rápido</button>
+        <button id="clearButton">🗑️ Limpiar Todo</button>
         
         <div class="output-section">
             <label for="outputText">Texto transformado:</label>
@@ -113,6 +132,9 @@ dato5 dato6</pre>
 dato3 || dato4
 dato5 || dato6</pre>
         </div>
+
+        <div id="copyMessage">¡Copiado al portapapeles!</div>
+
     </div>
 
     <script>
@@ -154,6 +176,50 @@ dato5 || dato6</pre>
             // Unir las líneas transformadas
             return transformedLines.join('\n');
         }
+
+        // --- NUEVA FUNCIONALIDAD: LIMPIAR TODO ---
+        document.getElementById('clearButton').addEventListener('click', function() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('outputText').value = '';
+            document.getElementById('inputText').focus();
+        });
+
+        // --- NUEVA FUNCIONALIDAD: COPIAR RÁPIDO ---
+        document.getElementById('copyButton').addEventListener('click', function() {
+            const outputTextarea = document.getElementById('outputText');
+            
+            if (navigator.clipboard && outputTextarea.value) {
+                navigator.clipboard.writeText(outputTextarea.value)
+                    .then(() => {
+                        showCopyMessage();
+                    })
+                    .catch(err => {
+                        console.error('Error al copiar:', err);
+                        fallbackCopyTextToClipboard(outputTextarea);
+                    });
+            } else if (outputTextarea.value) {
+                fallbackCopyTextToClipboard(outputTextarea);
+            }
+
+            function fallbackCopyTextToClipboard(element) {
+                element.select();
+                element.setSelectionRange(0, 99999);
+                try {
+                    document.execCommand('copy');
+                    showCopyMessage();
+                } catch (err) {
+                    // Fallo silencioso del fallback
+                }
+            }
+
+            function showCopyMessage() {
+                const message = document.getElementById('copyMessage');
+                message.style.opacity = 1;
+                setTimeout(() => {
+                    message.style.opacity = 0;
+                }, 1500);
+            }
+        });
     </script>
 </body>
 </html>

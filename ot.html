@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Formato SQL</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .logo {
+            height: 40px; /* Ajusta el tamaño del logo */
+            margin-right: 15px;
+        }
+
+        h1 {
+            color: #007bff; /* Un color distintivo para el título */
+            margin: 0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-group, .output-group {
+            flex: 1;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        #generateBtn {
+            background-color: #28a745; /* Verde */
+            color: white;
+        }
+
+        #generateBtn:hover {
+            background-color: #218838;
+        }
+
+        #copyBtn {
+            background-color: #007bff; /* Azul */
+            color: white;
+        }
+
+        #copyBtn:hover {
+            background-color: #0056b3;
+        }
+
+        .label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <img src="https://images.squarespace-cdn.com/content/v1/6581c2f2ed9bfb1cf6328bee/3bb68561-9357-44ea-9c84-34b509a49059/logos_eventelecom_color.png" alt="Logo Eventelecom" class="logo">
+        <h1>Generador de Formato SQL para WorkOrder</h1>
+    </div>
+    
+    <hr>
+
+    <div class="container">
+        <div class="input-group">
+            <label for="inputData" class="label">Pega tus datos aquí (un dato por línea - se corregirá a 8 dígitos si tiene 6):</label>
+            <textarea id="inputData" placeholder="Ejemplo:&#10;00320371&#10;320372&#10;00320373"></textarea>
+            <div class="controls">
+                <button id="generateBtn" onclick="generateFormat()">Generar Formato</button>
+            </div>
+        </div>
+
+        <div class="output-group">
+            <label for="outputData" class="label">Resultado Formateado:</label>
+            <textarea id="outputData" readonly placeholder="El resultado aparecerá aquí..."></textarea>
+            <div class="controls">
+                <button id="copyBtn" onclick="copyResult()" disabled>Copiar Resultado</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const inputData = document.getElementById('inputData');
+        const outputData = document.getElementById('outputData');
+        const copyBtn = document.getElementById('copyBtn');
+
+        function generateFormat() {
+            const rawText = inputData.value.trim();
+
+            if (rawText === "") {
+                outputData.value = "";
+                copyBtn.disabled = true;
+                return;
+            }
+
+            // 1. Obtener, limpiar y filtrar los datos de entrada
+            const dataArray = rawText.split('\n')
+                                     .map(line => line.trim())
+                                     .filter(line => line.length > 0);
+
+            if (dataArray.length === 0) {
+                outputData.value = "";
+                copyBtn.disabled = true;
+                return;
+            }
+
+            // 2. Aplicar la lógica de corrección y formateo a cada dato
+            const correctedAndFormattedData = dataArray.map(data => {
+                let correctedData = data;
+                
+                // VERIFICACIÓN Y CORRECCIÓN: Si el dato tiene 6 caracteres,
+                // asume que le faltan los ceros iniciales y los añade.
+                if (correctedData.length === 6) {
+                    // Rellenar con ceros a la izquierda hasta tener 8 caracteres
+                    correctedData = correctedData.padStart(8, '0');
+                }
+                
+                // 3. Formatear con comillas simples
+                return `'${correctedData}'`;
+            }).join(',');
+
+            // 4. Construir la cadena SQL final
+            const finalFormat = `WorkOrder.WorkOrderNumber in (${correctedAndFormattedData})`;
+
+            // 5. Mostrar el resultado y habilitar el botón de copiado
+            outputData.value = finalFormat;
+            copyBtn.disabled = false;
+        }
+
+        function copyResult() {
+            // Seleccionar el texto en el área de salida
+            outputData.select();
+            
+            // Usar la API del portapapeles
+            navigator.clipboard.writeText(outputData.value)
+                .then(() => {
+                    // Feedback visual
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = '¡Copiado!';
+                    setTimeout(() => {
+                        copyBtn.textContent = originalText;
+                    }, 1500);
+                })
+                .catch(err => {
+                    console.error('Error al intentar copiar: ', err);
+                    alert('Error al intentar copiar el texto. Por favor, cópialo manualmente.');
+                });
+        }
+    </script>
+
+</body>
+</html>

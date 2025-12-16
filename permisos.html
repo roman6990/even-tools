@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Gestión de Trabajos V6 (Etiquetas Limpias)</title>
+    <style>
+        /* Estilos CSS */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #1a73e8;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="text"], input[type="date"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box; 
+            font-size: 16px;
+        }
+        /* Estilo para los campos que se llenan automáticamente o son especiales */
+        #idPago, #empresaDuena {
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        /* Campos fijos/automáticos (solo lectura) */
+        #idPago:not(:focus):read-only, #empresaDuena:not(:focus):read-only {
+            background-color: #e9ecef; 
+        }
+        /* Campo ID Pago editable (solo para NN UM) */
+        #idPago:not(:read-only) {
+            background-color: #fffacd; 
+        }
+        /* Campos con valor por defecto que son editables */
+        #empresaTrabajos, #tiempoAprox {
+            background-color: #f8f8e0; 
+        }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .button-group {
+            margin-top: 25px;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            position: relative; 
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            flex-grow: 1; 
+        }
+        #generarBtn {
+            background-color: #1a73e8; 
+        }
+        #generarBtn:hover {
+            background-color: #155bb5;
+        }
+        #limpiarBtn {
+            background-color: #f4b400; 
+        }
+        #limpiarBtn:hover {
+            background-color: #dba300;
+        }
+        #copiarBtn {
+            background-color: #0f9d58; 
+        }
+        #copiarBtn:hover {
+            background-color: #0a7c41;
+        }
+        #datosGenerados {
+            margin-top: 20px;
+        }
+        /* Estilos para la notificación */
+        .notification {
+            position: absolute;
+            top: -40px; 
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s, top 0.3s;
+            z-index: 100;
+            white-space: nowrap;
+        }
+        .notification.show {
+            opacity: 1;
+            top: -50px;
+        }
+        .success {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .info {
+            background-color: #2196F3;
+            color: white;
+        }
+        .error {
+            background-color: #f44336;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📋 Formulario de Gestión de Trabajos</h2>
+    
+    <form id="gestionForm">
+        
+        <div class="form-group">
+            <label for="idPago">ID pago de gestión:</label>
+            <input type="text" id="idPago" name="idPago" readonly required>
+        </div>
+
+        <div class="form-group">
+            <label for="empresaDuena">Empresa dueña del ID:</label>
+            <input type="text" id="empresaDuena" name="empresaDueña" readonly required>
+        </div>
+
+        <div class="form-group">
+            <label for="empresaTrabajos">Empresa que realiza trabajos:</label>
+            <input type="text" id="empresaTrabajos" name="empresaTrabajos" value="EVEN TELECOM" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="ticket">Ticket:</label>
+            <input type="text" id="ticket" name="ticket" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="cliente">Cliente:</label>
+            <select id="cliente" name="cliente" required>
+                <option value="" data-id="" data-duena="">Seleccione un Cliente...</option>
+                <option value="ATT" data-id="ATT-MCO-R4-FO25" data-duena="EVEN TELECOM">ATT</option>
+                <option value="MXF" data-id="MFP-MCO-MTY-R4-FO25" data-duena="EVEN TELECOM">MXF</option>
+                <option value="NN" data-id="NNT-MCO-R4-FO25" data-duena="EVEN TELECOM">NN</option>
+                <option value="NN UM" data-id="" data-duena="NEUTRAL NETWORKS">NN UM</option> 
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="participantes">Participantes:</label>
+            <input type="text" id="participantes" name="participantes" placeholder="Nombres, separados por coma">
+        </div>
+        <div class="form-group">
+            <label for="unidades">Unidades para laborar:</label>
+            <input type="text" id="unidades" name="unidades">
+        </div>
+        <div class="form-group">
+            <label for="trabajos">Trabajos a realizar:</label>
+            <textarea id="trabajos" name="trabajos" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="tipoLabor">Aéreo o subterránea:</label>
+            <select id="tipoLabor" name="tipoLabor" required>
+                <option value="">Seleccione...</option>
+                <option value="Aéreo">Aéreo</option>
+                <option value="Subterránea">Subterránea</option>
+                <option value="Mixta">Mixta</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="fecha">Fecha:</label>
+            <input type="date" id="fecha" name="fecha" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="tiempoAprox">Tiempo aproximado de labores:</label>
+            <input type="text" id="tiempoAprox" name="tiempoAprox" value="4 hrs" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="direccion">Dirección:</label>
+            <input type="text" id="direccion" name="direccion" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="municipio">Municipio:</label>
+            <select id="municipio" name="municipio" required>
+                <option value="">Seleccione un Municipio...</option>
+                <option value="Apodaca">Apodaca</option>
+                <option value="Escobedo">Escobedo</option>
+                <option value="Monterrey">Monterrey</option>
+                <option value="Guadalupe">Guadalupe</option>
+                <option value="Garcia">Garcia</option>
+                <option value="Juarez">Juarez</option>
+                <option value="San Nicolas">San Nicolas</option>
+                <option value="Santa Catarina">Santa Catarina</option>
+                <option value="San Pedro Garza Garcia">San Pedro Garza Garcia</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="ubicacionMaps">Ubicación Google Maps:</label>
+            <input type="text" id="ubicacionMaps" name="ubicacionMaps" placeholder="Pegue aquí el link">
+        </div>
+    </form>
+
+    <div class="button-group">
+        <div id="notification-area" class="notification"></div> 
+        
+        <button type="button" id="generarBtn">🚀 Generar Datos</button>
+        <button type="button" id="limpiarBtn">🗑️ Limpiar Datos</button>
+        <button type="button" id="copiarBtn">📄 Copiado Rápido</button>
+    </div>
+
+    <div class="form-group" id="datosGenerados">
+        <label for="outputData">Datos Generados (Para pegar o copiar):</label>
+        <textarea id="outputData" readonly placeholder="Aquí aparecerán los datos generados al hacer clic en 'Generar Datos'."></textarea>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('generarBtn').addEventListener('click', generarDatos);
+        document.getElementById('limpiarBtn').addEventListener('click', limpiarDatos);
+        document.getElementById('copiarBtn').addEventListener('click', copiarDatos);
+        document.getElementById('cliente').addEventListener('change', actualizarCamposDependientes);
+    });
+
+    /**
+     * Muestra una notificación temporal en la interfaz.
+     */
+    function showNotification(message, type = 'info') {
+        const notif = document.getElementById('notification-area');
+        notif.textContent = message;
+        notif.className = `notification show ${type}`;
+        
+        setTimeout(() => {
+            notif.className = 'notification';
+        }, 3000);
+    }
+
+    /**
+     * Actualiza ID pago de gestión y Empresa dueña del ID basado en la selección del cliente.
+     */
+    function actualizarCamposDependientes() {
+        const clienteSelect = document.getElementById('cliente');
+        const idPagoInput = document.getElementById('idPago');
+        const empresaDuenaInput = document.getElementById('empresaDuena');
+        
+        const selectedOption = clienteSelect.options[clienteSelect.selectedIndex];
+        const idGenerado = selectedOption.getAttribute('data-id');
+        const empresaDuena = selectedOption.getAttribute('data-duena');
+        const clienteValor = selectedOption.value;
+
+        // Lógica de Empresa Dueña (Siempre Readonly)
+        empresaDuenaInput.setAttribute('readonly', true);
+        empresaDuenaInput.value = empresaDuena || ''; 
+
+
+        // Lógica de ID Pago de Gestión (Editable solo para NN UM)
+        if (clienteValor === 'NN UM') {
+            idPagoInput.removeAttribute('readonly');
+            idPagoInput.value = ''; 
+            idPagoInput.placeholder = 'Ingrese ID de pago de gestión (NN UM)';
+        } else {
+            idPagoInput.setAttribute('readonly', true);
+            idPagoInput.value = idGenerado || ''; 
+            idPagoInput.placeholder = '';
+        }
+    }
+
+
+    /**
+     * Genera el texto formateado en el textarea usando el separador "="
+     */
+    function generarDatos() {
+        const form = document.getElementById('gestionForm');
+        const output = document.getElementById('outputData');
+        let datosGenerados = "";
+
+        Array.from(form.elements).forEach(element => {
+            if (element.name && element.name !== 'outputData') {
+                const labelElement = form.querySelector(`label[for="${element.id}"]`);
+                // ** LÍNEA MODIFICADA PARA LIMPIAR ETIQUETAS EN SALIDA **
+                let labelText = labelElement ? labelElement.textContent.trim() : element.name;
+                
+                // Limpieza de texto para la salida:
+                labelText = labelText.replace(':', '').trim(); // Elimina los dos puntos y espacios
+
+                // Excluir opciones vacías de selects
+                if ((element.id === 'cliente' || element.id === 'tipoLabor' || element.id === 'municipio') && element.value === '') {
+                    // No incluir
+                } else {
+                    // Usa el signo = como separador
+                    datosGenerados += `${labelText} = ${element.value}\n`;
+                }
+            }
+        });
+
+        output.value = datosGenerados.trim();
+        showNotification('🚀 Datos generados con éxito.', 'success');
+    }
+
+    /**
+     * Limpia todos los campos del formulario y el área de datos, restaurando los valores por defecto.
+     */
+    function limpiarDatos() {
+        const idPagoInput = document.getElementById('idPago');
+        const empresaTrabajosInput = document.getElementById('empresaTrabajos');
+        const tiempoAproxInput = document.getElementById('tiempoAprox');
+        
+        document.getElementById('gestionForm').reset();
+        document.getElementById('outputData').value = '';
+        
+        // Restaura los valores por defecto editables
+        empresaTrabajosInput.value = "EVEN TELECOM";
+        tiempoAproxInput.value = "4 hrs";
+
+        // Restaura el campo ID Pago de Gestión y Empresa Dueña a su estado inicial
+        idPagoInput.setAttribute('readonly', true); 
+        idPagoInput.value = '';
+        idPagoInput.placeholder = '';
+        document.getElementById('empresaDuena').value = '';
+
+        showNotification('🗑️ Formulario y área de datos limpiados.', 'info');
+    }
+
+    /**
+     * Copia el contenido del área de texto al portapapeles.
+     */
+    function copiarDatos() {
+        const output = document.getElementById('outputData');
+        
+        if (output.value.trim() === '') {
+            showNotification('⚠️ No hay datos generados para copiar.', 'error');
+            return;
+        }
+
+        output.select();
+        output.setSelectionRange(0, 99999); 
+
+        navigator.clipboard.writeText(output.value)
+            .then(() => {
+                showNotification('📄 ¡Copiado Rápido al portapapeles!', 'success');
+            })
+            .catch(err => {
+                // Fallback para navegadores antiguos
+                document.execCommand('copy');
+                showNotification('📄 ¡Copiado Rápido al portapapeles! (Alternativa)', 'success');
+            });
+    }
+</script>
+
+</body>
+</html>
