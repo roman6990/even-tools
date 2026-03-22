@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control Local</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --hover: #334155;
+        }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+            margin: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+        }
+        a {
+            background: var(--card);
+            color: var(--text);
+            text-decoration: none;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        a:hover {
+            background: var(--hover);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        .icon {
+            margin-right: 12px;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Herramientas y Scripts</h1>
+    <div class="grid">
+        <a href="coordenadas.html"><span class="icon">📍</span> Coordenadas</a>
+        <a href="extrameta.html"><span class="icon">🔍</span> Extraer Metadatos</a>
+        <a href="extrazip.html"><span class="icon">📦</span> Extra Zip</a>
+        <a href="script.html"><span class="icon">📜</span> Script General</a>
+        <a href="nomina.html"><span class="icon">💵</span> Nómina</a>
+        <a href="info.php"><span class="icon">🐘</span> Prueba PHP</a>
+        <a href="pandas.html"><span class="icon">🐼</span> Folios Pandas</a>
+        <a href="reporte.html"><span class="icon">📊</span> Reporte</a>
+        <a href="ot.html"><span class="icon">⚙️</span> OT Script</a>
+        <a href="permisos.html"><span class="icon">🔑</span> Permisos</a>
+        <a href="boxReport.html"><span class="icon">📦</span> Box Report</a>
+        <a href="horas.html"><span class="icon">🕒</span> Horas</a>
+    </div>
+</div>
+
+</body>
+</html>
