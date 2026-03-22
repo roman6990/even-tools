@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intervencion de Caja</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        h2 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            resize: vertical;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .btn-generate { background-color: #3498db; color: white; }
+        .btn-copy { background-color: #27ae60; color: white; }
+        .btn-clear { background-color: #e74c3c; color: white; }
+        
+        button:hover { opacity: 0.9; }
+
+        .result-area {
+            margin-top: 25px;
+        }
+        #output {
+            background-color: #f9f9f9;
+            font-family: 'Courier New', Courier, monospace;
+            border: 1px dashed #bdc3c7;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Intervencion Caja</h2>
+    
+    <form id="boxForm">
+        <div class="form-group">
+            <label># Caja (Número o Coordenadas):</label>
+            <input type="text" id="caja" placeholder="Ej: 123 o 19.43, -99.13">
+        </div>
+        
+        <div class="form-group">
+            <label># Empalmes:</label>
+            <input type="text" id="empalmes" placeholder="Cantidad de empalmes">
+        </div>
+        
+        <div class="form-group">
+            <label># OTDR:</label>
+            <input type="text" id="otdr" placeholder="Resultado o ID OTDR">
+        </div>
+        
+        <div class="form-group">
+            <label># Conexión (Descripción):</label>
+            <textarea id="conexion" rows="2" placeholder="Describa la conexión"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label># Comentarios:</label>
+            <textarea id="comentarios" rows="3" placeholder="Notas adicionales"></textarea>
+        </div>
+
+        <div class="button-group">
+            <button type="button" class="btn-generate" onclick="generateText()">Generar</button>
+            <button type="button" class="btn-copy" onclick="copyToClipboard()">Copiado Rápido</button>
+            <button type="button" class="btn-clear" onclick="clearForm()">Limpiar</button>
+        </div>
+    </form>
+
+    <div class="result-area">
+        <label>Resultado:</label>
+        <textarea id="output" rows="8" readonly></textarea>
+    </div>
+</div>
+
+<script>
+    function generateText() {
+        const caja = document.getElementById('caja').value;
+        const empalmes = document.getElementById('empalmes').value;
+        const otdr = document.getElementById('otdr').value;
+        const conexion = document.getElementById('conexion').value;
+        const comentarios = document.getElementById('comentarios').value;
+
+        const template = `*Intervencion caja*
+#caja: ${caja}
+#empalmes: ${empalmes}
+#otdr: ${otdr}
+#conexion: ${conexion}
+#comentarios: ${comentarios}`;
+
+        document.getElementById('output').value = template;
+    }
+
+    function copyToClipboard() {
+        const output = document.getElementById('output');
+        if (!output.value) {
+            alert("No hay texto para copiar");
+            return;
+        }
+        output.select();
+        document.execCommand('copy');
+        alert("¡Texto copiado al portapapeles!");
+    }
+
+    function clearForm() {
+        document.getElementById('boxForm').reset();
+        document.getElementById('output').value = '';
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Transformador de Tickets y Generador de Nómina Catorcenal</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            max-width: 950px; /* Ampliado para la nueva columna */
+            margin: 0 auto;
+        }
+        textarea { 
+            width: 100%; 
+            height: 120px; 
+            margin-bottom: 10px; 
+            padding: 10px; 
+            box-sizing: border-box; 
+            font-family: 'Consolas', monospace;
+        }
+        #nomina {
+            height: 80px;
+            font-family: 'Consolas', monospace;
+            white-space: pre; 
+            overflow-x: auto; 
+        }
+        #resumen-container {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            font-size: 1.1em;
+        }
+        .resumen-line {
+            display: block;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+        button { 
+            padding: 10px 15px; 
+            margin-right: 10px; 
+            margin-bottom: 10px;
+            cursor: pointer; 
+        }
+        #message { 
+            margin-top: 10px; 
+            color: green; 
+            font-weight: bold; 
+        }
+        .info {
+            background-color: #fff0f0; 
+            padding: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #d9534f;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Generador de Formato de Tickets y Nómina Catorcenal 🧾</h1>
+
+    <div class="info">
+        <strong>¡Importante! Reglas de Pago:</strong>
+        <ul>
+            <li>Máximo de **9 HE** por semana (Total 18 HE en la catorcena), solo Lunes a Viernes.</li>
+            <li>Máximo de **3 HE** por día (1HE2, 2HE2, 3HE2).</li>
+            <li>Máximo de **2 DL/PD** por catorcena.</li>
+            <li>**Total Días Laborados** = 12 días base + DL pagados (Máximo 14).</li>
+        </ul>
+    </div>
+
+    <label for="entrada">1. Entrada (Formato: hrs ticket fecha [opcional: descripción]):</label>
+    <textarea id="entrada" placeholder="Ejemplo:
+8.0 ticket1 2023-10-01
+DL ticket2 2023-10-02
+3.0 ticket3 2023-10-03
+3.0 ticket4 2023-10-04
+3.0 ticket5 2023-10-05
+3.0 ticket6 2023-10-06
+3.0 ticket7 2023-10-07
+3.0 ticket8 2023-10-08
+..."></textarea>
+
+    <button onclick="generarFormato()">Generar</button>
+    <button onclick="limpiarTodo()">Limpiar Todo</button>
+
+    <hr>
+    
+    <label>2. Resumen de Horas (Calculado):</label>
+    <div id="resumen-container">
+        <span class="resumen-line">✅ Horas Extra Ingresadas: 0.0 (Máx. pagable: 18.0)</span>
+        <span class="resumen-line">📅 Días DL/PD Ingresados: 0 (Máx. pagable: 2)</span>
+        <span class="resumen-line">ℹ️ Otras Excepciones (FL, etc.): 0</span>
+    </div>
+
+    <label for="nomina">3. Formato de Nómina Catorcenal (Datos):</label>
+    <button onclick="copiarNomina()">Copiar Solo Datos (Sin Encabezado)</button>
+    <textarea id="nomina" readonly placeholder="La estructura de la nómina catorcenal aparecerá aquí..."></textarea>
+
+    <label for="salida">4. Salida (Formato Transformado para Tickets):</label>
+    <button onclick="copiarSalida()">Copiar Salida Completa</button>
+    <textarea id="salida" readonly placeholder="El formato transformado aparecerá aquí..."></textarea>
+
+    <div id="message"></div>
+
+    <script>
+        // Constantes para los límites de nómina
+        const MAX_HE_TOTAL = 18;
+        const MAX_HE_DIARIA = 3;
+        const MAX_HE_WEEKLY = 9; 
+        const MAX_DL_TOTAL = 2;
+        const DIAS_LABORABLES_BASE = 12; // Días S1, L1, M1, M1, J1, V1, S2, L2, M2, M2, J2, V2
+
+        // Define las columnas de la nómina catorcenal
+        const NOMBRES_DIAS = ["S1", "D1", "L1", "M1", "M1", "J1", "V1", "S2", "D2", "L2", "M2", "M2", "J2", "V2"];
+        // ¡ACTUALIZADO! Incluye "TOTAL DÍAS LABORADOS"
+        const NOMBRES_NOMINA_COLS = [
+            ...NOMBRES_DIAS, 
+            "TOTAL DÍAS LABORADOS",
+            "PRIMA DOMINICAL", 
+            "DESCANSO LABORADO/ FESTIVO", 
+            "HORAS EXTRAS"
+        ];
+        
+        // --- FUNCIONES PRINCIPALES ---
+        
+        function generarFormato() {
+            const entrada = document.getElementById('entrada').value.trim();
+            const lineas = entrada.split('\n');
+            let salidaFormateada = '';
+            
+            let totalHorasHE = 0; 
+            let contadorDL = 0;
+            let otrasExcepciones = 0; 
+            
+            const regex = /^(\S+)\s+(\S+)\s+(\S+)\s*(.*)$/; 
+
+            for (let i = 0; i < lineas.length; i++) {
+                const linea = lineas[i].trim();
+                if (linea) {
+                    const match = linea.match(regex);
+                    if (match) {
+                        const hrs = match[1];
+                        const ticket = match[2];
+                        const fecha = match[3];
+                        const descripcion = match[4].trim(); 
+                        
+                        let nuevoFormato;
+                        
+                        if (hrs.toUpperCase() === 'DL') {
+                            contadorDL++;
+                            nuevoFormato = `${hrs} ${ticket} ${fecha}`;
+                        } else if (hrs.toUpperCase() === 'FL') {
+                            otrasExcepciones++;
+                            nuevoFormato = `${hrs} ${ticket} ${fecha}`;
+                        } else {
+                            const horasDia = parseFloat(hrs);
+                            if (!isNaN(horasDia)) {
+                                totalHorasHE += horasDia; 
+                                
+                                // INICIO DE LA MODIFICACIÓN para eliminar .0
+                                let horasFormato;
+                                // Comprueba si el número es un entero (p. ej., 3, 3.0, 8.0)
+                                if (horasDia % 1 === 0) { 
+                                    horasFormato = horasDia.toString(); // Salida: "3"
+                                } else {
+                                    // Mantiene un decimal para números con decimales (p. ej., 1.5)
+                                    horasFormato = horasDia.toFixed(1); 
+                                }
+                                
+                                // Aplica el formato hrsHE2
+                                nuevoFormato = `${horasFormato}HE2 ${ticket} ${fecha}`;
+                                // FIN DE LA MODIFICACIÓN
+                                
+                            } else {
+                                otrasExcepciones++; 
+                                nuevoFormato = `${hrs} ${ticket} ${fecha}`;
+                            }
+                        }
+
+                        if (descripcion) {
+                            const descLimpia = descripcion.replace(/"/g, '').replace(/'/g, ''); 
+                            nuevoFormato += ` '${descLimpia}'`;
+                        }
+
+                        if (salidaFormateada) {
+                            salidaFormateada += ', ';
+                        }
+                        salidaFormateada += nuevoFormato;
+                    }
+                }
+            }
+
+            document.getElementById('salida').value = salidaFormateada;
+            
+            actualizarResumen(totalHorasHE, contadorDL, otrasExcepciones);
+            generarFormatoNomina(totalHorasHE, contadorDL);
+
+            mostrarMensaje('Formato generado y nómina calculada con éxito.');
+        }
+
+        /**
+         * Función para generar el formato de la nómina.
+         */
+        function generarFormatoNomina(totalHorasHE, contadorDL) {
+            
+            const nominaArray = NOMBRES_DIAS.map((day, index) => {
+                // Asumimos que D1 (indice 1) y D2 (indice 8) son los días de descanso por defecto
+                if (index === 1 || index === 8) {
+                    return 'D'; 
+                }
+                return 'A';
+            });
+            
+            let horasACubrir = Math.min(totalHorasHE, MAX_HE_TOTAL);
+            let dlRestantes = Math.min(contadorDL, MAX_DL_TOTAL);
+            let horasDistribuidas = 0; 
+
+            // 1. Distribuir DL/PD (Priorizando D1 y D2)
+            const indicesDL = [1, 8]; 
+            for (const indice of indicesDL) {
+                if (dlRestantes > 0) {
+                    // Si el día de descanso (D) tiene un DL, lo reemplazamos por DL/PD
+                    nominaArray[indice] = 'DL/PD';
+                    dlRestantes--;
+                }
+            }
+            
+            // 2. Distribuir Horas Extra (Solo Lunes a Viernes)
+            const indicesWeek1 = [2, 3, 4, 5, 6]; // L1, M1, M1, J1, V1
+            const indicesWeek2 = [9, 10, 11, 12, 13]; // L2, M2, M2, J2, V2 
+            
+            function distributeWeeklyHE(indices) {
+                let paidThisWeek = 0;
+                
+                for (const indice of indices) {
+                    // Solo distribuir HE en días que no tienen DL/PD asignado (deben ser 'A')
+                    if (nominaArray[indice] === 'A' && paidThisWeek < MAX_HE_WEEKLY && horasACubrir > 0) {
+                        
+                        let canPayToday = MAX_HE_DIARIA;
+                        let canPayInWeek = MAX_HE_WEEKLY - paidThisWeek;
+                        let canPayTotal = horasACubrir;
+                        
+                        let horasAsignadasDia = Math.min(canPayToday, canPayInWeek, canPayTotal);
+                        
+                        if (horasAsignadasDia > 0) {
+                            // Formato de nómina
+                            nominaArray[indice] = `${horasAsignadasDia}HE2`;
+                            horasACubrir -= horasAsignadasDia;
+                            horasDistribuidas += horasAsignadasDia;
+                            paidThisWeek += horasAsignadasDia;
+                        }
+                    }
+                }
+                return paidThisWeek;
+            }
+
+            distributeWeeklyHE(indicesWeek1);
+            distributeWeeklyHE(indicesWeek2);
+            
+            // 3. Totales de Nómina
+            
+            // DL pagados es la diferencia entre los reclamados (contadorDL) y los que quedaron fuera del límite (dlRestantes)
+            const dlPagados = Math.min(contadorDL, MAX_DL_TOTAL); 
+
+            // ¡NUEVO CALCULO! Total Días Laborados = 12 + DL pagados
+            const totalDiasLaborados = DIAS_LABORABLES_BASE + dlPagados;
+
+            const primaDominical = dlPagados; 
+            const descansoLaborado = dlPagados; 
+            const totalHESalida = horasDistribuidas;
+
+            // 4. Construir la cadena de salida (encabezado y datos)
+            
+            const encabezado = NOMBRES_NOMINA_COLS.join('\t');
+            
+            // ¡ACTUALIZADO! Incluye totalDiasLaborados en la primera posición de los totales
+            const datosNomina = [
+                ...nominaArray, 
+                totalDiasLaborados,
+                primaDominical, 
+                descansoLaborado, 
+                totalHESalida
+            ].join('\t');
+
+            document.getElementById('nomina').value = encabezado + '\n' + datosNomina;
+        }
+
+        // --- FUNCIONES DE UTILIDAD (COPIAR/LIMPIAR) ---
+
+        function actualizarResumen(totalHorasHE, contadorDL, otrasExcepciones) {
+            const resumenDiv = document.getElementById('resumen-container');
+            resumenDiv.innerHTML = `
+                <span class="resumen-line">✅ Horas Extra Ingresadas: ${totalHorasHE.toFixed(1)} (Máx. pagable: ${MAX_HE_TOTAL}, 9 por semana)</span>
+                <span class="resumen-line">📅 Días DL/PD Ingresados: ${contadorDL} (Máx. pagable: ${MAX_DL_TOTAL})</span>
+                <span class="resumen-line">ℹ️ Otras Excepciones (FL, etc.): ${otrasExcepciones}</span>
+            `;
+        }
+
+        function limpiarTodo() {
+            document.getElementById('entrada').value = '';
+            document.getElementById('salida').value = '';
+            document.getElementById('nomina').value = '';
+            actualizarResumen(0, 0, 0); 
+            mostrarMensaje('Campos limpiados.');
+        }
+
+        /**
+         * Función para copiar SOLO LOS DATOS de Nómina (Sin encabezado).
+         */
+        function copiarNomina() {
+            const nominaTextarea = document.getElementById('nomina');
+            const contenido = nominaTextarea.value;
+            
+            if (!contenido.trim()) {
+                mostrarMensaje('El campo de Nómina está vacío.', 'red');
+                return;
+            }
+
+            // Split por salto de línea y toma el segundo elemento (índice 1), que son los datos
+            const soloDatos = contenido.split('\n')[1].trim(); 
+
+            navigator.clipboard.writeText(soloDatos)
+                .then(() => {
+                    mostrarMensaje('¡Copiados al portapapeles solo los datos de nómina!');
+                })
+                .catch(err => {
+                    nominaTextarea.select();
+                    document.execCommand('copy');
+                    mostrarMensaje('¡Copiado al portapapeles! (Método alternativo, puede incluir el encabezado)');
+                });
+        }
+
+        /**
+         * Función para copiar el contenido del área de salida (tickets).
+         */
+        function copiarSalida() {
+            const salidaTextarea = document.getElementById('salida');
+             if (!salidaTextarea.value.trim()) {
+                mostrarMensaje('El campo de Salida está vacío.', 'red');
+                return;
+            }
+
+            navigator.clipboard.writeText(salidaTextarea.value)
+                .then(() => {
+                    mostrarMensaje('¡Copiado al portapapeles!');
+                })
+                .catch(err => {
+                    salidaTextarea.select();
+                    document.execCommand('copy');
+                    mostrarMensaje('¡Copiado al portapapeles! (Método alternativo)');
+                });
+        }
+
+        function mostrarMensaje(texto, color = 'green') {
+            const messageElement = document.getElementById('message');
+            messageElement.textContent = texto;
+            messageElement.style.color = color;
+            
+            setTimeout(() => {
+                messageElement.textContent = '';
+            }, 3000);
+        }
+    </script>
+
+</body>
+</html>
