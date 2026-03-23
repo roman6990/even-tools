@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Unificado Pro - Drag & Move</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #4CAF50;  
+            --secondary-color: #128C7E; 
+            --info-color: #2196F3;
+            --danger-color: #f44336;
+            --border-color: #ddd;
+            --light-gray: #f5f5f5;
+            --medium-gray: #e0e0e0;
+            --dark-gray: #333;
+            --shadow: 0 0 10px rgba(0,0,0,0.1);
+            --manual-color: #FF9800;
+        }
+        
+        * { box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { margin: 20px; background-color: var(--light-gray); color: var(--dark-gray); }
+        .container { max-width: 1400px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: var(--shadow); }
+        
+        details { margin-bottom: 20px; border: 1px solid #ccc; border-radius: 5px; }
+        summary { padding: 15px; background-color: var(--medium-gray); font-weight: bold; cursor: pointer; display: flex; align-items: center; }
+        summary:before { content: '▶'; margin-right: 10px; }
+        details[open] > summary:before { content: '▼'; }
+
+        .header { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; }
+        .logo { max-width: 200px; max-height: 80px; object-fit: contain; }
+        .evidencia-input { border: none; border-bottom: 2px solid #ccc; font-size: 28px; font-weight: bold; outline: none; width: 200px; background: transparent; }
+
+        .portada-table table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .portada-table th, .portada-table td { border: 1px solid var(--border-color); padding: 12px; text-align: left; }
+        .portada-table th { background-color: var(--light-gray); font-size: 0.8em; }
+        .campo-input, .campo-select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+
+        .upload-area { border: 2px dashed var(--border-color); border-radius: 8px; padding: 30px; text-align: center; cursor: pointer; background: #fafafa; transition: 0.3s; }
+        .upload-area:hover { border-color: var(--info-color); background: #f0f7ff; }
+        .preview-img-portada { max-width: 100%; max-height: 300px; border-radius: 4px; margin-top: 10px; display: none; }
+
+        /* GRID DE EVIDENCIAS Y DRAG & DROP */
+        .images-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
+        .image-card { background: white; border: 1px solid #ddd; border-radius: 10px; overflow: hidden; position: relative; cursor: grab; transition: transform 0.2s; }
+        .image-card.dragging { opacity: 0.5; border: 2px dashed var(--info-color); }
+        .image-container { height: 200px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; }
+        .image-container img { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
+        .image-info { padding: 15px; }
+        .comment-input { width: 100%; height: 60px; padding: 8px; border: 1px solid var(--border-color); border-radius: 5px; resize: none; font-size: 13px; }
+
+        .btn { padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
+        .btn-zip { background: var(--secondary-color); width: 100%; }
+        .btn-manual { background: var(--manual-color); width: 100%; }
+        .btn-export { background: var(--info-color); width: 100%; font-size: 18px; }
+        .btn-danger { background: var(--danger-color); font-size: 11px; width: 100%; margin-top: 5px; }
+        
+        .loading { display: none; text-align: center; padding: 20px; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--info-color); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <img src="https://images.squarespace-cdn.com/content/v1/6581c2f2ed9bfb1cf6328bee/3bb68561-9357-44ea-9c84-34b509a49059/logos_eventelecom_color.png" class="logo" id="clientLogoImg">
+        <div style="flex:1">
+            <h1 style="margin:0">Reporte de Evidencias</h1>
+            <input type="text" id="numeroEvidencia" class="evidencia-input" placeholder="Ticket #">
+        </div>
+    </div>
+
+    <details open id="detailsStep1">
+        <summary>PASO 1: Datos de Portada y Ubicación</summary>
+        <div style="padding:20px" class="portada-table">
+            <table>
+                <tr>
+                    <th>TIPO ACTIVIDAD</th>
+                    <th>CLIENTE</th>
+                    <th colspan="2">NOMBRE CLIENTE</th>
+                    <th>FECHA REPORTE</th>
+                </tr>
+                <tr>
+                    <td><select id="tipoActividad" class="campo-select"><option>Mantenimiento Correctivo</option><option>Mantenimiento Preventivo</option></select></td>
+                    <td><select id="clienteSelect" class="campo-select"><option value="EVEN">Even Telecom</option><option value="NEUTRAL">Neutral Networks</option><option value="ATT">AT&T</option><option value="MXF">MXF</option></select></td>
+                    <td colspan="2"><input type="text" id="nombreCliente" class="campo-input"></td>
+                    <td><input type="date" id="fechaReporte" class="campo-input"></td>
+                </tr>
+                <tr>
+                    <th>SUPERVISOR EVEN</th><td><input type="text" id="supervisorEven" class="campo-input"></td>
+                    <th colspan="2">REGIÓN</th><td colspan="2"><input type="text" id="region" class="campo-input"></td>
+                </tr>
+                <tr>
+                    <th>SEGMENTO</th><td colspan="4"><input type="text" id="segmento" class="campo-input"></td>
+                </tr>
+                <tr>
+                    <th>OBSERVACIONES</th><td colspan="4"><input type="text" id="observaciones" class="campo-input"></td>
+                </tr>
+            </table>
+
+            <h3>Ubicación del Daño</h3>
+            <div class="upload-area" id="uploadAreaPortada" onclick="document.getElementById('imageInput').click()">
+                <div id="previewPortadaText">📸 Haz clic para subir o <b>presiona Ctrl+V para pegar</b></div>
+                <img id="previewImage" class="preview-img-portada">
+                <input type="file" id="imageInput" hidden accept="image/*">
+            </div>
+        </div>
+    </details>
+
+    <details open id="detailsStep2">
+        <summary>PASO 2: Carga y Reordenamiento de Evidencias</summary>
+        <div style="padding:20px">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <button class="btn btn-zip" onclick="document.getElementById('zipFileInput').click()">📁 Cargar ZIP Telegram</button>
+                <input type="file" id="zipFileInput" hidden accept=".zip">
+                <button class="btn btn-manual" onclick="document.getElementById('manualImageInput').click()">📷 Carga Manual (Fotos)</button>
+                <input type="file" id="manualImageInput" hidden accept="image/*" multiple>
+            </div>
+            
+            <div id="processingIndicator" class="loading"><div class="spinner"></div><p>Procesando archivos...</p></div>
+            
+            <div id="reorderHint" style="text-align:center; padding:10px; background:#e3f2fd; border-radius:5px; margin-bottom:10px;">
+                🎯 <b>Modo Drag & Move:</b> Arrastra las tarjetas para cambiar el orden en el reporte final.
+            </div>
+            
+            <div id="imagesContainer" class="images-grid"></div>
+        </div>
+    </details>
+
+    <details open>
+        <summary>PASO 3: Generar PDF</summary>
+        <div style="padding:20px">
+            <button class="btn btn-export" id="exportBtn" onclick="generarPDF()">Descargar Reporte Completo PDF</button>
+        </div>
+    </details>
+</div>
+
+<script>
+    const { jsPDF } = window.jspdf;
+    let evidencias = []; // Array de {id, blob, url, comment}
+    let capturaBase64 = null;
+
+    const CLIENT_LOGOS = {
+        'EVEN': 'https://images.squarespace-cdn.com/content/v1/6581c2f2ed9bfb1cf6328bee/3bb68561-9357-44ea-9c84-34b509a49059/logos_eventelecom_color.png',
+        'NEUTRAL': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvp0AB4UAfkNT4ZMZfuoVMcl3vNa6FiYoaTA&s',
+        'ATT': 'https://upload.wikimedia.org/wikipedia/commons/3/31/AT%26T_logo_2016.svg',
+        'MXF': 'https://images.crunchbase.com/image/upload/c_pad,f_auto,q_auto:eco,dpr_1/r3xvlbkm8tmonifo7d9c?ik-sanitizeSvg=true'
+    };
+
+    // --- MANEJO DE PORTADA (PEGADO Y CLICK) ---
+    function cargarPortada(file) {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            capturaBase64 = e.target.result;
+            document.getElementById('previewImage').src = capturaBase64;
+            document.getElementById('previewImage').style.display = 'block';
+            document.getElementById('previewPortadaText').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    document.getElementById('imageInput').addEventListener('change', (e) => cargarPortada(e.target.files[0]));
+
+    document.addEventListener('paste', (e) => {
+        const items = e.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                cargarPortada(items[i].getAsFile());
+            }
+        }
+    });
+
+    document.getElementById('clienteSelect').addEventListener('change', function() {
+        document.getElementById('clientLogoImg').src = CLIENT_LOGOS[this.value];
+    });
+
+    // --- MANEJO DE EVIDENCIAS (ZIP Y MANUAL) ---
+    document.getElementById('zipFileInput').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        document.getElementById('processingIndicator').style.display = 'block';
+
+        try {
+            const zip = await JSZip.loadAsync(file);
+            const jsonData = JSON.parse(await zip.file("result.json").async("string"));
+            const msgs = jsonData.messages || [];
+
+            for (let i = 0; i < msgs.length; i++) {
+                if (msgs[i].photo) {
+                    const blob = await zip.file(msgs[i].photo).async("blob");
+                    let txt = extraerTexto(msgs[i]);
+                    // Lógica proximidad
+                    if (!txt && i > 0 && !msgs[i-1].photo) txt = extraerTexto(msgs[i-1]);
+                    if (!txt && i < msgs.length - 1 && !msgs[i+1].photo) txt = extraerTexto(msgs[i+1]);
+                    addEvidencia(blob, txt || "Sin comentario");
+                }
+            }
+        } catch (err) { alert("Error ZIP: " + err.message); }
+        document.getElementById('processingIndicator').style.display = 'none';
+    });
+
+    document.getElementById('manualImageInput').addEventListener('change', function(e) {
+        Array.from(e.target.files).forEach(file => addEvidencia(file, ""));
+        this.value = "";
+    });
+
+    function extraerTexto(msg) {
+        if (!msg) return "";
+        const val = msg.text || msg.caption || "";
+        return Array.isArray(val) ? val.map(p => typeof p === 'string' ? p : (p.text || "")).join("").trim() : val.toString().trim();
+    }
+
+    function addEvidencia(blob, comment) {
+        evidencias.push({ id: Date.now() + Math.random(), blob, url: URL.createObjectURL(blob), comment });
+        renderGrid();
+    }
+
+    // --- RENDERIZADO Y DRAG & DROP ---
+    function renderGrid() {
+        const container = document.getElementById('imagesContainer');
+        container.innerHTML = "";
+        evidencias.forEach((ev, index) => {
+            const card = document.createElement('div');
+            card.className = 'image-card';
+            card.draggable = true;
+            card.dataset.index = index;
+            
+            card.innerHTML = `
+                <div class="image-container"><img src="${ev.url}"></div>
+                <div class="image-info">
+                    <textarea class="comment-input" onchange="evidencias[${index}].comment = this.value">${ev.comment}</textarea>
+                    <button class="btn-danger" onclick="eliminarEv(${index})">Eliminar</button>
+                </div>
+            `;
+
+            // Eventos Drag
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragover', handleDragOver);
+            card.addEventListener('drop', handleDrop);
+            card.addEventListener('dragend', handleDragEnd);
+
+            container.appendChild(card);
+        });
+    }
+
+    let dragSrcIndex = null;
+
+    function handleDragStart(e) {
+        dragSrcIndex = this.dataset.index;
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        return false;
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        const targetIndex = this.dataset.index;
+        if (dragSrcIndex !== targetIndex) {
+            const movedItem = evidencias.splice(dragSrcIndex, 1)[0];
+            evidencias.splice(targetIndex, 0, movedItem);
+            renderGrid();
+        }
+    }
+
+    function handleDragEnd() {
+        this.classList.remove('dragging');
+    }
+
+    function eliminarEv(index) {
+        evidencias.splice(index, 1);
+        renderGrid();
+    }
+
+    // --- GENERACIÓN PDF ---
+    async function generarPDF() {
+        const doc = new jsPDF();
+        const logoNeutral = await getB64(CLIENT_LOGOS.NEUTRAL);
+        const logoCliente = await getB64(CLIENT_LOGOS[document.getElementById('clienteSelect').value]);
+        const ticket = document.getElementById('numeroEvidencia').value || "S/N";
+
+        // Portada
+        doc.addImage(logoNeutral, 'PNG', 15, 12, 35, 12);
+        doc.addImage(logoCliente, 'PNG', 160, 12, 35, 12);
+        doc.setFontSize(18); doc.setFont("helvetica", "bold");
+        doc.text("REPORTE DE EVIDENCIAS", 105, 38, { align: 'center' });
+        doc.text(`TICKET: ${ticket}`, 105, 46, { align: 'center' });
+
+        const dataTab = [
+            ["TIPO ACTIVIDAD", document.getElementById('tipoActividad').value, "CLIENTE", document.getElementById('clienteSelect').value],
+            ["NOMBRE CLIENTE", document.getElementById('nombreCliente').value, "FECHA", document.getElementById('fechaReporte').value],
+            ["SUPERVISOR", document.getElementById('supervisorEven').value, "REGION", document.getElementById('region').value],
+            ["SEGMENTO", { content: document.getElementById('segmento').value, colSpan: 3 }],
+            ["OBSERVACIONES", { content: document.getElementById('observaciones').value, colSpan: 3 }]
+        ];
+
+        doc.autoTable({ startY: 55, body: dataTab, theme: 'grid', styles: { fontSize: 8 } });
+
+        if (capturaBase64) {
+            doc.text("UBICACIÓN DEL DAÑO", 105, doc.lastAutoTable.finalY + 10, { align: 'center' });
+            doc.addImage(capturaBase64, 'JPEG', 15, doc.lastAutoTable.finalY + 15, 180, 85);
+        }
+
+        // Evidencias (2 columnas, 3 filas)
+        let cur = 0;
+        while (cur < evidencias.length) {
+            doc.addPage();
+            doc.addImage(logoNeutral, 'PNG', 10, 8, 25, 8);
+            doc.setFontSize(8); doc.text(`Ticket: ${ticket}`, 105, 12, { align: 'center' });
+            doc.line(10, 18, 200, 18);
+
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 2; c++) {
+                    if (cur >= evidencias.length) break;
+                    const ev = evidencias[cur];
+                    const x = 15 + (c * 95), y = 25 + (r * 85);
+                    const b64 = await blobToB64(ev.blob);
+                    doc.addImage(b64, 'JPEG', x, y, 85, 65);
+                    doc.text(doc.splitTextToSize(ev.comment, 85), x, y + 70);
+                    cur++;
+                }
+            }
+        }
+        doc.save(`Reporte_${ticket}.pdf`);
+    }
+
+    function blobToB64(blob) { return new Promise(res => { const r = new FileReader(); r.onloadend = () => res(r.result); r.readAsDataURL(blob); }); }
+    function getB64(url) {
+        return new Promise(res => {
+            const img = new Image(); img.crossOrigin="anonymous";
+            img.onload = () => {
+                const c = document.createElement("canvas"); c.width=img.width; c.height=img.height;
+                c.getContext("2d").drawImage(img,0,0); res(c.toDataURL("image/png"));
+            }; img.src=url;
+        });
+    }
+    document.getElementById('fechaReporte').valueAsDate = new Date();
+</script>
+
+</body>
+</html>
